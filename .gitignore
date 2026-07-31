@@ -1,0 +1,16 @@
+# Built binary. CI builds it as ./arcet at the repo root for the self-audit job.
+/arcet
+/arcet.exe
+
+# Self-audit output.
+/arcet.sarif
+
+# GoReleaser.
+/dist/
+
+# Go test and coverage artefacts.
+*.test
+*.out
+
+# Local editor and OS noise.
+.DS_Store
