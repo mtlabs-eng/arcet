@@ -1,0 +1,92 @@
+# ATENÇÃO — este ficheiro NÃO corre como está.
+#
+# Os SHAs abaixo são placeholders. Foram deixados por preencher de propósito:
+# um hash inventado num repositório de segurança é pior do que um TODO visível.
+#
+# Para os resolver, com os tags actuais que quiseres usar:
+#
+#   ./scripts/pin.sh actions/checkout v4.2.2
+#   ./scripts/pin.sh actions/setup-go v5.2.0
+#   ./scripts/pin.sh github/codeql-action/upload-sarif v3
+#
+# Confirma sempre o tag mais recente no repositório da action antes de fixar.
+# Depois: ./scripts/pin.sh --check .github/workflows/ci.yml
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Omissão restritiva para todo o workflow. Cada job sobe só o que precisar.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: build e testes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@REPLACE_ME_SHA_40_HEX # v4.2.2
+      - uses: actions/setup-go@REPLACE_ME_SHA_40_HEX # v5.2.0
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: go build ./...
+      - run: go test -race ./...
+      - run: go vet ./...
+
+  # Dogfooding. O arcet audita os próprios workflows e falha o build se
+  # encontrar seja o que for. Ver CLAUDE.md, secção "Dogfooding — regra dura".
+  self-audit:
+    name: auto-auditoria
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # necessário para publicar SARIF no code scanning
+    steps:
+      - uses: actions/checkout@REPLACE_ME_SHA_40_HEX # v4.2.2
+      - uses: actions/setup-go@REPLACE_ME_SHA_40_HEX # v5.2.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: build
+        run: go build -o arcet ./cmd/arcet
+
+      # Falha o build a qualquer finding. Zero tolerância nos nossos próprios
+      # workflows: exit 1 = encontrou, exit 2 = a ferramenta rebentou.
+      - name: auditar os nossos workflows
+        run: ./arcet --fail-on low .github/workflows/
+
+      # Corre outra vez em SARIF para alimentar o separador Security.
+      # `if: always()` para publicar mesmo quando o passo acima falha — é
+      # precisamente aí que os findings interessam.
+      - name: gerar SARIF
+        if: always()
+        run: ./arcet --format sarif --output arcet.sarif .github/workflows/ || true
+
+      - name: publicar SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@REPLACE_ME_SHA_40_HEX # v3
+        with:
+          sarif_file: arcet.sarif
+          category: arcet-self-audit
+
+  pins:
+    name: verificar pins
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@REPLACE_ME_SHA_40_HEX # v4.2.2
+      - name: todas as actions fixadas por SHA
+        run: ./scripts/pin.sh --check .github/workflows/*.yml
