@@ -15,11 +15,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
-    name: lint and tests
+  test:
+    name: tests (${{ matrix.python }})
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor comes first and is the one that matters: it fails on
+        # syntax newer than the oldest interpreter we claim to support.
+        python: ["3.11", "3.12", "3.13"]
     steps:
       # Actions are pinned by full SHA, with the tag alongside. Resolve new
       # ones with ./scripts/pin.sh owner/repo tag.
@@ -28,10 +34,26 @@ jobs:
       - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           enable-cache: true
+          python-version: ${{ matrix.python }}
 
-      # Installs the Python pinned in .python-version, which is the floor in
-      # pyproject.toml on purpose: CI should fail on syntax newer than the
-      # oldest interpreter we claim to support.
+      - name: install
+        run: uv sync --locked --all-groups
+
+      - name: pytest
+        run: uv run pytest
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+
       - name: install
         run: uv sync --locked --all-groups
 
@@ -41,5 +63,27 @@ jobs:
       - name: ruff format
         run: uv run ruff format --check .
 
-      - name: pytest
-        run: uv run pytest
+  package:
+    name: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+
+      # A wheel that does not build, or one whose console script is missing,
+      # is only discovered by the first person trying to install it. Cheaper
+      # to find here.
+      - name: build
+        run: uv build
+
+      - name: install the wheel and run it
+        run: |
+          uv venv /tmp/check
+          VIRTUAL_ENV=/tmp/check uv pip install dist/*.whl
+          /tmp/check/bin/arcet --version
+          /tmp/check/bin/arcet --help > /dev/null

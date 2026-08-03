@@ -141,6 +141,27 @@ Toda a leitura que falhe por permissões, e todo o âmbito que não seja possív
 enumerar, gera um `UnsupportedConstruct` de tipo `INSUFFICIENT_READ_ACCESS`.
 Entra em M3, com a camada de autenticação.
 
+### Legibilidade vs exactidão — resolvido em M5
+
+Correr contra um tenant real mostrou o problema: uma identidade com Owner dá
+62 903 permissões e 336 084 linhas de tabela.
+
+A resposta **não** foi passar a literal por omissão. O `Contributor` exclui
+`Microsoft.Authorization/*/Write` e `elevateAccess`; sem expansão isso aparece
+como `*`, ou seja **mais acesso do que a verdade**. Trocar exactidão por
+legibilidade é o lado errado para errar numa ferramenta de acessos.
+
+O que se fez:
+
+- **`--action <padrão>`** — a forma principal de usar isto. A pergunta real é
+  "consegue fazer X, e porquê", não "lista tudo". A expansão é o que torna
+  essa correspondência exacta.
+- **A tabela corta às 50 por secção** e diz quantas ficaram de fora e como ver
+  mais. Nunca truncar em silêncio.
+- **O JSON nunca é truncado.** Um pipeline não lê a linha de aviso.
+- **Filtrar não remove avisos.** Uma resposta estreita não pode sair mais
+  confiante do que a larga.
+
 ### Wildcards
 
 Os papéis definem permissões com wildcards (`*`, `Microsoft.KeyVault/*/read`).
