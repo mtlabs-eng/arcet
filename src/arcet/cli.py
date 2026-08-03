@@ -70,6 +70,7 @@ def whocan(
         typer.Option(
             "--subscription",
             "-s",
+            metavar="SUBSCRIPTION_ID",
             help="Subscription id to resolve permissions within.",
         ),
     ],

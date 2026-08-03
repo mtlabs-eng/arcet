@@ -72,6 +72,10 @@ class PermissionState(StrEnum):  ACTIVE, PIM_ELIGIBLE
 class ActionKind(StrEnum):       CONTROL_PLANE, DATA_PLANE
 class DerivationKind(StrEnum):   GROUP_MEMBERSHIP, ROLE_ASSIGNMENT, PIM_ELIGIBLE,
                                  SCOPE_INHERITANCE, DIRECT_ASSIGNMENT
+class UnsupportedConstructKind(StrEnum):
+                                 DENY_ASSIGNMENT, ABAC_CONDITION,
+                                 MANAGEMENT_GROUP_INHERITANCE,
+                                 INSUFFICIENT_READ_ACCESS, UNRECOGNISED
 
 DerivationStep:        kind, label (legível), ref (id canónico do Azure)
 EffectivePermission:   action, action_kind, state, scope, derivation
@@ -98,6 +102,18 @@ Decisões já tomadas sobre o modelo:
 - **`derivation` é ordenada, do sujeito até à origem.** É a ordem por que se
   lê em voz alta: "o utilizador está no grupo X, que está no grupo Y, que tem
   o papel Z neste âmbito".
+- **Uma permissão sem cadeia é irrepresentável.** `derivation` vazia levanta
+  `ValueError` na construção. A cadeia é o produto; um `EffectivePermission`
+  que não a tenha é uma afirmação sem prova, e não deve chegar a existir na
+  memória, quanto mais ao output.
+- **`PIM_ELIGIBLE` exige um passo `PIM_ELIGIBLE` na cadeia.** Também validado
+  na construção. Marcar algo como elegível sem o justificar é o erro que mais
+  cara custa a quem lê.
+- **Ordenação canónica na construção.** O `ResolutionResult` ordena e
+  desduplica as permissões ao ser criado. O determinismo é invariante do
+  produto, e assim não depende de cada renderer se lembrar de ordenar. A
+  desduplicação é só de duplicados exactos — cadeias diferentes para a mesma
+  acção continuam a ser entradas distintas.
 
 ### PIM elegível e activo
 
@@ -110,6 +126,20 @@ maioria das ferramentas engana quem as lê.
 Subtraem durante a resolução: a acção simplesmente não aparece na lista. É
 construção que sabemos interpretar, logo não gera aviso. Deny assignments são
 outra coisa — esses geram aviso, porque não os sabemos resolver no v0.1.
+
+### Limitações do observador
+
+O arcet corre com credenciais só de leitura. Se essas credenciais não puderem
+ler as atribuições de papel de um âmbito, ou a pertença a grupos no Graph, o
+Azure não devolve erro — devolve **menos linhas**.
+
+Resolver isso para "esta identidade tem menos permissões" seria um resultado
+incompleto a apresentar-se como completo, exactamente o que a regra de precisão
+proíbe. Não é uma construção não suportada; é uma limitação de quem observa.
+
+Toda a leitura que falhe por permissões, e todo o âmbito que não seja possível
+enumerar, gera um `UnsupportedConstruct` de tipo `INSUFFICIENT_READ_ACCESS`.
+Entra em M3, com a camada de autenticação.
 
 ### Wildcards
 
