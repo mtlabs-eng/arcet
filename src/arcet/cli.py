@@ -71,6 +71,19 @@ def whocan(
         OutputFormat,
         typer.Option("--format", "-f", help="Output format."),
     ] = OutputFormat.TABLE,
+    action: Annotated[
+        str | None,
+        typer.Option(
+            "--action",
+            "-a",
+            metavar="PATTERN",
+            help=(
+                "Only show permissions matching this action, wildcards "
+                "allowed. The way to ask a narrow question of an identity "
+                "that holds a lot, e.g. 'Microsoft.Authorization/*/write'."
+            ),
+        ),
+    ] = None,
     expand: Annotated[
         bool,
         typer.Option(
@@ -92,7 +105,7 @@ def whocan(
     from arcet.diagnostics import Diagnostics
     from arcet.reader import AzureSource
     from arcet.render import render
-    from arcet.resolve import IdentityNotFound, resolve
+    from arcet.resolve import IdentityNotFound, filter_by_action, resolve
 
     diagnostics = Diagnostics()
     try:
@@ -123,11 +136,14 @@ def whocan(
         )
         raise typer.Exit(code=2) from error
 
+    if action is not None:
+        result = filter_by_action(result, action)
+
     # Warnings are printed, not signalled through the exit code. Deny
     # assignments exist in most real subscriptions, so exiting non-zero
     # whenever the result is partial would fire almost every run and teach
     # people to append `|| true` — which silences the real warnings too.
-    render(result, output_format)
+    render(result, output_format, action_filter=action)
 
 
 def main() -> None:

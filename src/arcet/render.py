@@ -71,6 +71,12 @@ _SECTION_STYLES = {
 # stating outright rather than leaving the reader to infer from a gap.
 _SECTION_ORDER = (PermissionState.ACTIVE, PermissionState.PIM_ELIGIBLE)
 
+#: How many permissions each table section prints before cutting and saying so.
+#: Chosen to fit a screen: an identity with Owner resolves to tens of thousands
+#: of actions, and the table is for reading, not for exporting. JSON is never
+#: truncated.
+DEFAULT_TABLE_LIMIT = 50
+
 #: Continuation indent for wrapped warning text, aligned under the bullet.
 _WARNING_CONTINUATION = "     "
 #: Floor for the wrap width, so a very narrow terminal degrades rather than
@@ -128,11 +134,23 @@ def render_json(result: ResolutionResult, *, indent: int | None = 2) -> str:
     return json.dumps(result_to_dict(result), indent=indent, ensure_ascii=False)
 
 
-def render_table(result: ResolutionResult, console: Console | None = None) -> None:
+def render_table(
+    result: ResolutionResult,
+    console: Console | None = None,
+    *,
+    limit: int = DEFAULT_TABLE_LIMIT,
+    action_filter: str | None = None,
+) -> None:
     """Render a result for a human, to `console` or to stdout.
 
     Rich handles colour detection: piped output and NO_COLOR both come out
     plain, so redirecting to a file gives stable text.
+
+    Long results are cut at `limit` per section and say so. An identity with
+    Owner expands to tens of thousands of actions, and printing all of them is
+    not an answer anyone reads — but truncating without saying so would make a
+    partial list look like the whole one, so the count that was left out is
+    always stated.
     """
     console = console or Console()
 
@@ -143,13 +161,17 @@ def render_table(result: ResolutionResult, console: Console | None = None) -> No
 
     if not result.permissions:
         console.print()
-        console.print(
-            Text("No permissions found for this identity in this subscription."),
+        message = (
+            f"No permission matching {action_filter!r} for this identity in this "
+            f"subscription."
+            if action_filter
+            else "No permissions found for this identity in this subscription."
         )
+        console.print(Text(message))
         return
 
     for state in _SECTION_ORDER:
-        _print_section(result, state, console)
+        _print_section(result, state, console, limit=limit)
 
 
 def _print_warnings(result: ResolutionResult, console: Console) -> None:
@@ -200,7 +222,11 @@ def _print_header(result: ResolutionResult, console: Console) -> None:
 
 
 def _print_section(
-    result: ResolutionResult, state: PermissionState, console: Console
+    result: ResolutionResult,
+    state: PermissionState,
+    console: Console,
+    *,
+    limit: int = DEFAULT_TABLE_LIMIT,
 ) -> None:
     permissions = [p for p in result.permissions if p.state is state]
     count = len(permissions)
@@ -225,7 +251,23 @@ def _print_section(
     if subtitle:
         console.print(Text(subtitle, style="dim"))
 
-    for permission in permissions:
+    shown = permissions if limit <= 0 else permissions[:limit]
+    hidden = count - len(shown)
+    if hidden:
+        # Stated up front, in the same colour as a warning. A truncation the
+        # reader discovers only by counting is a truncation that misled them.
+        console.print(
+            Text.assemble(
+                (f"showing {len(shown)} of {count}. ", "bold yellow"),
+                (
+                    f"{hidden} not shown — narrow with --action, "
+                    f"or use --format json for all of them",
+                    "yellow",
+                ),
+            )
+        )
+
+    for permission in shown:
         console.print()
         _print_permission(permission, console)
 
@@ -246,17 +288,31 @@ def _print_permission(permission: EffectivePermission, console: Console) -> None
     for step in permission.derivation:
         # Text, never markup: labels and refs carry quotes and brackets that
         # Rich would otherwise try to interpret as styling.
-        console.print(Text(" " * indent + "└─ ").append(step.label))
+        #
+        # soft_wrap keeps each step on one logical line. Resource ids are long
+        # and unbreakable, and letting Rich fold them restarts the text at
+        # column zero, which destroys the indentation the chain is read by.
+        console.print(Text(" " * indent + "└─ ").append(step.label), soft_wrap=True)
         indent += 3
-    console.print(Text(" " * indent + f"@ {permission.scope}", style="dim"))
+    console.print(
+        Text(" " * indent + f"@ {permission.scope}", style="dim"), soft_wrap=True
+    )
 
 
 def render(
     result: ResolutionResult,
     output_format: OutputFormat,
     console: Console | None = None,
+    *,
+    limit: int = DEFAULT_TABLE_LIMIT,
+    action_filter: str | None = None,
 ) -> None:
-    """Render in the format asked for by --format."""
+    """Render in the format asked for by --format.
+
+    Only the table is ever cut. JSON is what a pipeline consumes, and a
+    truncated machine format would be a silent lie to something that cannot
+    read the warning line.
+    """
     if output_format is OutputFormat.JSON:
         # soft_wrap is what makes this valid JSON. Without it Rich wraps long
         # lines to the terminal width, and a newline inserted inside a string
@@ -267,4 +323,4 @@ def render(
             render_json(result), markup=False, highlight=False, soft_wrap=True
         )
         return
-    render_table(result, console)
+    render_table(result, console, limit=limit, action_filter=action_filter)

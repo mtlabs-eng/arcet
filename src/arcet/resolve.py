@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol
 
-from arcet.actions import resolve_actions
+from arcet.actions import matches, resolve_actions
 from arcet.arm import is_management_group_scope
 from arcet.diagnostics import Diagnostics
 from arcet.groups import Membership, unreached
@@ -44,7 +44,31 @@ if TYPE_CHECKING:
         RoleDefinition,
     )
 
-__all__ = ["IdentityNotFound", "PermissionSource", "resolve"]
+__all__ = ["IdentityNotFound", "PermissionSource", "filter_by_action", "resolve"]
+
+
+def filter_by_action(result: ResolutionResult, pattern: str) -> ResolutionResult:
+    """Keep only the permissions an action pattern covers.
+
+    This is what makes the tool usable against a privileged identity: Owner
+    expands to tens of thousands of actions, and the question worth asking is
+    almost never "list them" but "can this person do X, and why".
+
+    Warnings are carried over untouched. A filter narrows what is shown; it
+    does not narrow what could not be understood, and a filtered answer that
+    dropped the caveats would be more confident than the unfiltered one.
+    """
+    matcher = matches
+    return ResolutionResult(
+        identity=result.identity,
+        subscription=result.subscription,
+        permissions=tuple(
+            permission
+            for permission in result.permissions
+            if matcher(pattern, permission.action)
+        ),
+        warnings=result.warnings,
+    )
 
 
 class IdentityNotFound(LookupError):
