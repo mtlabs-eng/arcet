@@ -258,8 +258,13 @@ def render(
 ) -> None:
     """Render in the format asked for by --format."""
     if output_format is OutputFormat.JSON:
-        # Printed as one plain string. Rich must not reflow or highlight it:
-        # this output gets piped into jq.
-        (console or Console()).print(render_json(result), markup=False, highlight=False)
+        # soft_wrap is what makes this valid JSON. Without it Rich wraps long
+        # lines to the terminal width, and a newline inserted inside a string
+        # is an unescaped control character: `arcet --format json | jq` fails
+        # on any scope id longer than the window. Found by running it, not by
+        # a test — the tests used a console wide enough to hide it.
+        (console or Console()).print(
+            render_json(result), markup=False, highlight=False, soft_wrap=True
+        )
         return
     render_table(result, console)

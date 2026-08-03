@@ -83,6 +83,21 @@ def _reason(error: Exception) -> str:
     return type(error).__name__
 
 
+#: ARM's answer when a tenant has no Entra ID P2, and so cannot use PIM at all.
+_NO_PIM_LICENCE = "AadPremiumLicenseRequired"
+
+
+def is_pim_unavailable(error: HttpResponseError) -> bool:
+    """Whether PIM is absent from this tenant rather than unreadable.
+
+    Without a P2 licence no eligible assignment can exist, so there is nothing
+    being missed and a warning would be a false one. False warnings are how a
+    tool teaches people to skip the true ones, and every warning arcet emits
+    has to be worth reading.
+    """
+    return _NO_PIM_LICENCE in str(error)
+
+
 def _fatal_or_reason(error: HttpResponseError) -> str:
     """Classify a failed read, letting authentication failures through.
 
@@ -111,7 +126,14 @@ class ArmReader:
         self._client = AuthorizationManagementClient(credential, subscription_id)
 
     def role_assignments_for(self, principal_id: str) -> tuple[RoleAssignment, ...]:
-        """Every assignment held by a principal in this subscription.
+        """Every assignment that reaches a principal in this subscription.
+
+        The filter is assignedTo(), not `principalId eq`. The latter returns
+        only assignments made to the principal itself, so everything granted
+        through a group is absent — and absent without a warning, because
+        nothing failed. Confirmed against a real tenant, where `principalId eq`
+        returned 7 assignments and assignedTo() returned 10, the three extra
+        being the ones that actually mattered.
 
         The principal id is checked against the GUID shape before it reaches
         the OData filter. It arrives from a Graph lookup rather than from the
@@ -125,7 +147,7 @@ class ArmReader:
         scope = f"/subscriptions/{self._subscription_id}"
         try:
             found = self._client.role_assignments.list_for_subscription(
-                filter=f"principalId eq '{principal_id}'"
+                filter=f"assignedTo('{principal_id}')"
             )
             # serialize() gives back the wire shape, nested properties and all,
             # which is the same shape the fixtures encode. The parser the tests
@@ -171,6 +193,8 @@ class ArmReader:
                 for item in found
             )
         except HttpResponseError as error:
+            if is_pim_unavailable(error):
+                return ()
             # Losing this does not shrink the answer, it removes a whole half
             # of it: everything the identity could become in five minutes.
             self._diagnostics.unreadable(
@@ -192,6 +216,8 @@ class ArmReader:
                 [item.serialize(keep_readonly=True) for item in found]
             )
         except HttpResponseError as error:
+            if is_pim_unavailable(error):
+                return frozenset()
             # Only costs a label on the chain, never a permission, so this one
             # is recorded and stepped over.
             self._diagnostics.unreadable(

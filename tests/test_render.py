@@ -7,6 +7,7 @@ code exists, so this is where that is checked.
 from __future__ import annotations
 
 import json
+from io import StringIO
 
 from rich.console import Console
 
@@ -379,6 +380,20 @@ class TestDispatch:
     ) -> None:
         render(mixed_result, OutputFormat.JSON, console)
         json.loads(output_of(console))
+
+    def test_json_survives_a_narrow_terminal(
+        self, mixed_result: ResolutionResult
+    ) -> None:
+        """Regression: Rich wrapped long lines and broke the JSON.
+
+        A newline inserted inside a string is an unescaped control character,
+        so `arcet --format json | jq` failed on any scope id wider than the
+        window. The old tests used a 100-column console, which was wide enough
+        to hide it.
+        """
+        narrow = Console(file=StringIO(), width=20, force_terminal=False, no_color=True)
+        render(mixed_result, OutputFormat.JSON, narrow)
+        json.loads(output_of(narrow))
 
     def test_table_format(
         self, mixed_result: ResolutionResult, console: Console
