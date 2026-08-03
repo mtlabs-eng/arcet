@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" width="560" height="260" role="img" aria-label="arcet — effective Azure permissions, explained">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F0B44A"/>
+      <stop offset="100%" stop-color="#D9812F"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Citadel wall: arcet, from arcere (to keep out) and arx (citadel). -->
+  <g fill="none" stroke="url(#g)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M232 44 h96 v22 h-24 v-14 h-24 v14 h-24 v-14 h-24 z"/>
+    <path d="M232 66 v70 c0 34 22 60 48 72 26-12 48-38 48-72 V66"/>
+  </g>
+
+  <!-- The derivation chain: three links, narrowing to the grant. -->
+  <g fill="none" stroke="#8FA3B8" stroke-width="5.5" stroke-linecap="round">
+    <circle cx="280" cy="96" r="15"/>
+    <path d="M280 111 v12"/>
+    <circle cx="280" cy="138" r="13"/>
+    <path d="M280 151 v11"/>
+    <circle cx="280" cy="175" r="11" stroke="url(#g)"/>
+  </g>
+
+  <text x="280" y="228" text-anchor="middle"
+        font-family="ui-sans-serif, -apple-system, 'Segoe UI', Inter, Helvetica, Arial, sans-serif"
+        font-size="62" font-weight="700" letter-spacing="10" fill="#8FA3B8">arc<tspan fill="url(#g)">et</tspan></text>
+</svg>
