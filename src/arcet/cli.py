@@ -7,25 +7,17 @@ declared now so that later milestones fill them in rather than reshape them.
 
 from __future__ import annotations
 
-from enum import StrEnum
 from typing import Annotated
 
 import typer
 
 from arcet import __version__
+from arcet.render import OutputFormat
 
 HELP = """Effective Azure permissions, with the derivation chain that explains them.
 
 arcet reads. It never writes to Azure, and it keeps no state between runs.
 """
-
-
-class OutputFormat(StrEnum):
-    """How to render a resolution result."""
-
-    TABLE = "table"
-    JSON = "json"
-
 
 app = typer.Typer(
     help=HELP,
