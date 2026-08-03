@@ -56,6 +56,12 @@ __all__ = ["ArmReader", "AzureSource", "GraphReader", "is_guid"]
 
 GRAPH_BASE = "https://graph.microsoft.com/v1.0"
 
+#: OData cast segments that make Graph return groups only. Narrowing on the
+#: server beats filtering on @odata.type here, because a client-side filter
+#: that matches nothing looks exactly like belonging to no groups.
+_GROUP_CAST = "memberOf/microsoft.graph.group"
+_TRANSITIVE_GROUP_CAST = "transitiveMemberOf/microsoft.graph.group"
+
 _GUID = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE
 )
@@ -279,13 +285,18 @@ class GraphReader:
     def parent_groups(self, collection: str, object_id: str) -> tuple[GroupRef, ...]:
         """The groups an object belongs to, one level up.
 
-        Directory roles and administrative units also come back from memberOf
-        and are filtered out: they are not what grants Azure RBAC, and treating
-        them as groups would put a step in the chain that explains nothing.
+        memberOf also returns directory roles and administrative units, which
+        do not grant Azure RBAC. They are excluded with the OData cast segment
+        rather than by filtering on @odata.type afterwards: with $select in
+        play, Graph need not return that property, and a type filter that
+        matches nothing would report an identity as belonging to no groups at
+        all — no error, no warning, and every group-derived permission gone.
+        Making the server do the narrowing removes the failure instead of
+        relying on a field being present.
         """
         try:
             items = self._paged(
-                f"/{collection}/{object_id}/memberOf?$select=id,displayName"
+                f"/{collection}/{object_id}/{_GROUP_CAST}?$select=id,displayName"
             )
         except HttpResponseError as error:
             self._diagnostics.unreadable(
@@ -294,11 +305,11 @@ class GraphReader:
             return ()
         return tuple(
             GroupRef(
-                object_id=item.get("id") or "",
-                display_name=item.get("displayName") or item.get("id") or "",
+                object_id=item["id"],
+                display_name=item.get("displayName") or item["id"],
             )
             for item in items
-            if item.get("@odata.type") == "#microsoft.graph.group" and item.get("id")
+            if item.get("id")
         )
 
     def transitive_group_ids(self, collection: str, object_id: str) -> frozenset[str]:
@@ -309,18 +320,17 @@ class GraphReader:
         """
         try:
             items = self._paged(
-                f"/{collection}/{object_id}/transitiveMemberOf?$select=id"
+                f"/{collection}/{object_id}/{_TRANSITIVE_GROUP_CAST}?$select=id"
             )
         except HttpResponseError as error:
             self._diagnostics.unreadable(
                 "transitive group membership", object_id, _fatal_or_reason(error)
             )
             return frozenset()
-        return frozenset(
-            item["id"]
-            for item in items
-            if item.get("@odata.type") == "#microsoft.graph.group" and item.get("id")
-        )
+        # Narrowed server-side by the same cast segment, for the same reason:
+        # a client-side type filter that silently matches nothing would make
+        # the cross-check agree with a broken walk.
+        return frozenset(item["id"] for item in items if item.get("id"))
 
     def find_identity(self, identifier: str) -> IdentityRef | None:
         """Resolve a UPN or object id to an identity.
