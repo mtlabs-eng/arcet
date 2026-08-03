@@ -1,0 +1,67 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "arcet"
+version = "0.1.0.dev0"
+description = "Effective Azure permissions, with the derivation chain that explains them."
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Marco Tomas" }]
+keywords = ["azure", "rbac", "permissions", "iam", "pim", "entra"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: System :: Systems Administration",
+    "Typing :: Typed",
+]
+dependencies = ["typer>=0.12"]
+
+[project.urls]
+Homepage = "https://github.com/mtlabs-eng/arcet"
+Source = "https://github.com/mtlabs-eng/arcet"
+Issues = "https://github.com/mtlabs-eng/arcet/issues"
+
+[project.scripts]
+arcet = "arcet.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/arcet"]
+
+[tool.ruff]
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "A",   # shadowing builtins — the reason UnsupportedConstruct is not called Warning
+    "B",   # bugbear
+    "C4",  # comprehensions
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # import sorting
+    "PTH", # use pathlib
+    "RET", # return consistency
+    "RUF",
+    "SIM", # simplify
+    "TID", # tidy imports
+    "UP",  # pyupgrade
+    "W",   # pycodestyle warnings
+]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"

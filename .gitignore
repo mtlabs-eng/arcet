@@ -1,16 +1,26 @@
-# Built binary. CI builds it as ./arcet at the repo root for the self-audit job.
-/arcet
-/arcet.exe
-
-# Self-audit output.
-/arcet.sarif
-
-# GoReleaser.
+# Python bytecode and build output.
+__pycache__/
+*.py[cod]
+/build/
 /dist/
+*.egg-info/
 
-# Go test and coverage artefacts.
-*.test
-*.out
+# Virtual environments. uv creates .venv by default.
+.venv/
+venv/
 
-# Local editor and OS noise.
+# Test and lint caches.
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editor and OS noise.
 .DS_Store
+
+# Never commit Azure credentials or recorded output that might carry tenant
+# data. Test fixtures live under tests/fixtures/ and are committed on purpose,
+# scrubbed of real identifiers.
+.env
+*.pem
+azure.json

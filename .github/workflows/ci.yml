@@ -1,5 +1,3 @@
-# Placeholder. To be rewritten for Python.
-
 name: ci
 
 on:
@@ -8,12 +6,40 @@ on:
   pull_request:
     branches: [main]
 
+# Restrictive default. This workflow only reads the repository.
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  ci:
+  check:
+    name: lint and tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - name: placeholder
-        run: 'true'
+      # Actions are pinned by full SHA, with the tag alongside. Resolve new
+      # ones with ./scripts/pin.sh owner/repo tag.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+
+      # Installs the Python pinned in .python-version, which is the floor in
+      # pyproject.toml on purpose: CI should fail on syntax newer than the
+      # oldest interpreter we claim to support.
+      - name: install
+        run: uv sync --locked --all-groups
+
+      - name: ruff check
+        run: uv run ruff check .
+
+      - name: ruff format
+        run: uv run ruff format --check .
+
+      - name: pytest
+        run: uv run pytest
