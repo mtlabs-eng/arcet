@@ -13,9 +13,16 @@ from dataclasses import dataclass
 from typing import Any
 
 __all__ = [
+    "DenyAssignmentRef",
+    "EligibleAssignment",
     "ProviderOperation",
     "RoleAssignment",
     "RoleDefinition",
+    "is_management_group_scope",
+    "is_subscription_scope",
+    "parse_activated_assignment_ids",
+    "parse_deny_assignment",
+    "parse_eligible_assignment",
     "parse_provider_operations",
     "parse_role_assignment",
     "parse_role_definition",
@@ -48,6 +55,35 @@ class RoleAssignment:
     #: An ABAC condition, when the assignment carries one. arcet does not
     #: evaluate these in v0.1; its presence must reach the reader as a warning.
     condition: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class EligibleAssignment:
+    """A role a principal may activate, but does not currently hold.
+
+    Kept apart from RoleAssignment on purpose. The whole point of the tool is
+    that "can activate this in five minutes" and "has this now" never blur, and
+    a single type carrying a flag is how they eventually would.
+    """
+
+    id: str
+    principal_id: str
+    principal_type: str
+    role_definition_id: str
+    scope: str
+    #: "Direct" when the eligibility is the principal's own, "Group" when it
+    #: reaches them through a group.
+    member_type: str
+    status: str
+
+
+@dataclass(frozen=True, slots=True)
+class DenyAssignmentRef:
+    """A deny assignment, recorded but not evaluated in v0.1."""
+
+    id: str
+    name: str
+    is_system_protected: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,6 +157,60 @@ def parse_role_assignment(payload: dict[str, Any]) -> RoleAssignment:
         role_definition_id=_text(properties.get("roleDefinitionId")),
         scope=_text(properties.get("scope")),
         condition=condition if isinstance(condition, str) and condition else None,
+    )
+
+
+def parse_eligible_assignment(payload: dict[str, Any]) -> EligibleAssignment:
+    """Turn a role eligibility schedule instance into an EligibleAssignment."""
+    properties = payload.get("properties") or {}
+    return EligibleAssignment(
+        id=_text(payload.get("id")),
+        principal_id=_text(properties.get("principalId")),
+        principal_type=_text(properties.get("principalType")),
+        role_definition_id=_text(properties.get("roleDefinitionId")),
+        scope=_text(properties.get("scope")),
+        member_type=_text(properties.get("memberType")),
+        status=_text(properties.get("status")),
+    )
+
+
+def parse_deny_assignment(payload: dict[str, Any]) -> DenyAssignmentRef:
+    """Turn a deny assignment payload into the little of it we report."""
+    properties = payload.get("properties") or {}
+    return DenyAssignmentRef(
+        id=_text(payload.get("id")),
+        name=_text(properties.get("denyAssignmentName")) or _text(payload.get("name")),
+        is_system_protected=bool(properties.get("isSystemProtected")),
+    )
+
+
+def parse_activated_assignment_ids(payloads: list[dict[str, Any]]) -> frozenset[str]:
+    """Role assignment ids that exist because someone activated a PIM role.
+
+    These already appear in the ordinary assignment list, so they are not a
+    second source of permissions — they only let the chain say that an active
+    permission got there through an activation rather than a standing grant.
+    """
+    activated: set[str] = set()
+    for payload in payloads:
+        properties = payload.get("properties") or {}
+        if _text(properties.get("assignmentType")) != "Activated":
+            continue
+        origin = _text(properties.get("originRoleAssignmentId"))
+        if origin:
+            activated.add(origin.casefold())
+    return frozenset(activated)
+
+
+def is_management_group_scope(scope: str) -> bool:
+    """Whether a scope sits in the management group hierarchy.
+
+    arcet does not walk that inheritance in v0.1, so a permission arriving from
+    there is reported with a warning rather than silently attributed to the
+    subscription.
+    """
+    return scope.casefold().startswith(
+        "/providers/microsoft.management/managementgroups/"
     )
 
 

@@ -7,10 +7,11 @@ what is exercised is everything that decides what those calls mean.
 from __future__ import annotations
 
 import pytest
+from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
 
 from arcet.diagnostics import Diagnostics
 from arcet.model import IdentityKind, UnsupportedConstructKind
-from arcet.reader import build_identity, is_guid
+from arcet.reader import _fatal_or_reason, build_identity, is_guid
 
 GUID = "99999999-8888-7777-6666-555555555555"
 
@@ -61,6 +62,31 @@ class TestBuildIdentity:
         """A directory that withholds names should still yield a usable answer."""
         identity = build_identity({"id": GUID}, IdentityKind.USER)
         assert identity.display_name == GUID
+
+
+class TestFailureClassification:
+    """Not being signed in must never surface as "that identity does not exist".
+
+    ClientAuthenticationError subclasses HttpResponseError, so the generic
+    handler would swallow it, every lookup would come back empty, and the tool
+    would confidently report the wrong thing about who exists.
+    """
+
+    def test_authentication_failure_is_not_downgraded_to_a_warning(self) -> None:
+        with pytest.raises(ClientAuthenticationError):
+            _fatal_or_reason(ClientAuthenticationError("no credentials"))
+
+    @pytest.mark.parametrize(
+        ("status", "expected"),
+        [(403, "not authorised"), (401, "credentials rejected"), (500, "HTTP 500")],
+    )
+    def test_ordinary_failures_become_reasons(self, status: int, expected: str) -> None:
+        error = HttpResponseError("failed")
+        error.status_code = status
+        assert _fatal_or_reason(error) == expected
+
+    def test_a_failure_without_a_status_still_says_something(self) -> None:
+        assert _fatal_or_reason(HttpResponseError("failed")) == "HttpResponseError"
 
 
 class TestDiagnostics:

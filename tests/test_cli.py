@@ -6,10 +6,13 @@ later milestones keep the property by feeding recorded fixtures instead.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from typer.testing import CliRunner
 
 from arcet import __version__
+from arcet import cli as cli_module
 from arcet.cli import OutputFormat, app
 
 runner = CliRunner()
@@ -68,28 +71,12 @@ def test_whocan_rejects_an_unknown_format() -> None:
     assert result.exit_code != 0
 
 
-def test_whocan_is_not_implemented_yet() -> None:
-    """Guards the milestone 0 stub.
-
-    This fails once the resolver lands, which is the reminder to delete the
-    stub and every assumption built on it.
-    """
-    result = runner.invoke(
-        app, ["whocan", "user@example.com", "--subscription", "sub-id"]
-    )
-    assert result.exit_code == 2
-    assert "not implemented" in result.output
-
-
 @pytest.mark.parametrize("output_format", list(OutputFormat))
-@pytest.mark.parametrize("expand_flag", ["--expand", "--no-expand"])
-def test_whocan_never_exits_clean_while_stubbed(
-    output_format: OutputFormat, expand_flag: str
-) -> None:
-    """No valid invocation may reach exit 0 before the resolver exists.
+def test_every_format_is_accepted(output_format: OutputFormat) -> None:
+    """Argument validation only. A valid invocation would reach Azure.
 
-    A caller reading only the exit status would take that as "resolved, and
-    this identity has nothing".
+    Nothing in this suite is allowed to do that, so the resolver is covered in
+    test_resolve.py against a fixture-backed source instead.
     """
     result = runner.invoke(
         app,
@@ -100,7 +87,18 @@ def test_whocan_never_exits_clean_while_stubbed(
             "sub-id",
             "--format",
             output_format.value,
-            expand_flag,
+            "--help",
         ],
     )
-    assert result.exit_code != 0
+    assert result.exit_code == 0
+
+
+def test_the_azure_sdk_is_not_imported_for_help() -> None:
+    """--help and --version stay instant.
+
+    Importing the SDK costs the best part of a second, and a CLI that pauses
+    before printing its own help feels broken.
+    """
+    source = Path(cli_module.__file__).read_text(encoding="utf-8")
+    header = source[: source.index("def whocan")]
+    assert "azure" not in header
