@@ -23,6 +23,8 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
+    "azure-identity>=1.17",
+    "azure-mgmt-authorization>=4.0",
     # rich is a typer dependency, but the renderers import it directly, so it
     # is declared rather than relied on transitively.
     "rich>=13",

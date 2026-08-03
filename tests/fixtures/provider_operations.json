@@ -1,0 +1,88 @@
+[
+  {
+    "id": "/providers/Microsoft.Authorization/providerOperations/Microsoft.KeyVault",
+    "name": "Microsoft.KeyVault",
+    "type": "Microsoft.Authorization/providerOperations",
+    "displayName": "Key Vault",
+    "operations": [
+      {
+        "name": "Microsoft.KeyVault/register/action",
+        "displayName": "Register Key Vault provider",
+        "isDataAction": false
+      }
+    ],
+    "resourceTypes": [
+      {
+        "name": "vaults",
+        "displayName": "Key vaults",
+        "operations": [
+          {
+            "name": "Microsoft.KeyVault/vaults/read",
+            "displayName": "View key vault",
+            "isDataAction": false
+          },
+          {
+            "name": "Microsoft.KeyVault/vaults/write",
+            "displayName": "Update key vault",
+            "isDataAction": false
+          },
+          {
+            "name": "Microsoft.KeyVault/vaults/delete",
+            "displayName": "Delete key vault",
+            "isDataAction": false
+          },
+          {
+            "name": "Microsoft.KeyVault/vaults/secrets/read",
+            "displayName": "View secret properties",
+            "isDataAction": false
+          },
+          {
+            "name": "Microsoft.KeyVault/vaults/keys/read",
+            "displayName": "View key properties",
+            "isDataAction": false
+          },
+          {
+            "name": "Microsoft.KeyVault/vaults/secrets/getSecret/action",
+            "displayName": "Read secret value",
+            "isDataAction": true
+          },
+          {
+            "name": "Microsoft.KeyVault/vaults/secrets/readMetadata/action",
+            "displayName": "Read secret metadata",
+            "isDataAction": true
+          },
+          {
+            "name": "Microsoft.KeyVault/vaults/secrets/setSecret/action",
+            "displayName": "Write secret value",
+            "isDataAction": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "/providers/Microsoft.Authorization/providerOperations/Microsoft.Resources",
+    "name": "Microsoft.Resources",
+    "type": "Microsoft.Authorization/providerOperations",
+    "displayName": "Resources",
+    "operations": [],
+    "resourceTypes": [
+      {
+        "name": "subscriptions/resourceGroups",
+        "displayName": "Resource groups",
+        "operations": [
+          {
+            "name": "Microsoft.Resources/subscriptions/resourceGroups/read",
+            "displayName": "View resource group",
+            "isDataAction": false
+          },
+          {
+            "name": "Microsoft.Resources/subscriptions/resourceGroups/delete",
+            "displayName": "Delete resource group",
+            "isDataAction": false
+          }
+        ]
+      }
+    ]
+  }
+]

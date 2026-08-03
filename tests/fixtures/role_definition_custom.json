@@ -1,0 +1,27 @@
+{
+  "id": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleDefinitions/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+  "name": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+  "type": "Microsoft.Authorization/roleDefinitions",
+  "properties": {
+    "roleName": "Platform Vault Operator",
+    "type": "CustomRole",
+    "description": "Two permission blocks and an exclusion, on purpose.",
+    "assignableScopes": [
+      "/subscriptions/00000000-1111-2222-3333-444444444444"
+    ],
+    "permissions": [
+      {
+        "actions": ["Microsoft.KeyVault/*/read"],
+        "notActions": ["Microsoft.KeyVault/vaults/keys/read"],
+        "dataActions": [],
+        "notDataActions": []
+      },
+      {
+        "actions": ["Microsoft.Resources/subscriptions/resourceGroups/read"],
+        "notActions": [],
+        "dataActions": ["Microsoft.KeyVault/vaults/secrets/getSecret/action"],
+        "notDataActions": []
+      }
+    ]
+  }
+}

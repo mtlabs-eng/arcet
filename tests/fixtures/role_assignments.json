@@ -1,0 +1,38 @@
+[
+  {
+    "id": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleAssignments/11111111-aaaa-bbbb-cccc-111111111111",
+    "name": "11111111-aaaa-bbbb-cccc-111111111111",
+    "type": "Microsoft.Authorization/roleAssignments",
+    "properties": {
+      "roleDefinitionId": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleDefinitions/4633458b-17de-408a-b874-0445c86b69e6",
+      "principalId": "99999999-8888-7777-6666-555555555555",
+      "principalType": "User",
+      "scope": "/subscriptions/00000000-1111-2222-3333-444444444444/resourceGroups/rg-prod",
+      "createdOn": "2026-01-05T10:00:00.0000000Z"
+    }
+  },
+  {
+    "id": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleAssignments/22222222-aaaa-bbbb-cccc-222222222222",
+    "name": "22222222-aaaa-bbbb-cccc-222222222222",
+    "type": "Microsoft.Authorization/roleAssignments",
+    "properties": {
+      "roleDefinitionId": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleDefinitions/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+      "principalId": "aaaaaaaa-0000-0000-0000-000000000001",
+      "principalType": "Group",
+      "scope": "/subscriptions/00000000-1111-2222-3333-444444444444"
+    }
+  },
+  {
+    "id": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleAssignments/33333333-aaaa-bbbb-cccc-333333333333",
+    "name": "33333333-aaaa-bbbb-cccc-333333333333",
+    "type": "Microsoft.Authorization/roleAssignments",
+    "properties": {
+      "roleDefinitionId": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleDefinitions/4633458b-17de-408a-b874-0445c86b69e6",
+      "principalId": "99999999-8888-7777-6666-555555555555",
+      "principalType": "User",
+      "scope": "/subscriptions/00000000-1111-2222-3333-444444444444",
+      "condition": "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:name] StringEquals 'public'",
+      "conditionVersion": "2.0"
+    }
+  }
+]

@@ -7,11 +7,16 @@ which is also the point of building the renderers before the client.
 
 from __future__ import annotations
 
+import json
 from io import StringIO
+from pathlib import Path
+from typing import Any
 
 import pytest
 from rich.console import Console
 
+from arcet.arm import ProviderOperation, parse_provider_operations
+from arcet.diagnostics import Diagnostics
 from arcet.model import (
     ActionKind,
     DerivationKind,
@@ -154,3 +159,26 @@ def output_of(console: Console) -> str:
     """Read back everything printed to a test console."""
     assert isinstance(console.file, StringIO)
     return console.file.getvalue()
+
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def load_fixture(name: str) -> Any:
+    """Read a recorded Azure payload.
+
+    These are the documented wire shapes, which is also what the SDK's
+    serialize() hands back, so the parsers exercised here are the parsers that
+    run against a real tenant.
+    """
+    return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
+
+
+@pytest.fixture
+def catalogue() -> tuple[ProviderOperation, ...]:
+    return parse_provider_operations(load_fixture("provider_operations.json"))
+
+
+@pytest.fixture
+def diagnostics() -> Diagnostics:
+    return Diagnostics()

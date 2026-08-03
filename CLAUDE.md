@@ -179,6 +179,25 @@ Os quatro últimos, quando detectados, geram aviso. Não são ignorados.
 - `ruff` para lint e formatação
 - Instalável por `uvx arcet` e `pipx install arcet`
 
+## Camada de leitura
+
+Decidido em M3, não reabrir sem motivo:
+
+- **ARM pelo SDK (`azure-mgmt-authorization`), Graph por REST.** O `msgraph-sdk`
+  acrescenta 28 pacotes transitivos (18 → 46) e o Graph que precisamos são dois
+  endpoints. O REST vai pelo pipeline do `azure-core`, que o SDK já traz, logo
+  custa zero dependências novas e mantém refresh de token e retries.
+- **A lógica é pura, a rede é burra.** `arm.py` e `actions.py` só transformam
+  payloads e são inteiramente testados; `reader.py` só busca. As fixtures usam
+  a forma do wire, que é exactamente o que `serialize(keep_readonly=True)` do
+  SDK devolve — logo o parser que os testes exercitam é o que corre a sério.
+- **Leitura-apenas verificada pelo build.** `tests/test_readonly.py` percorre a
+  AST do pacote e falha perante um método mutador do SDK, um literal com verbo
+  HTTP de escrita, ou um `HttpRequest` que não seja `GET`.
+- **O `principalId` é validado como GUID** antes de entrar no filtro OData.
+  Chega de uma consulta ao Graph, não do utilizador, mas interpolar string não
+  validada numa query não é hábito para se ter numa ferramenta destas.
+
 ## Convenções
 
 - **Os testes nunca chamam o Azure.** Sempre fixtures gravadas. Um teste que
