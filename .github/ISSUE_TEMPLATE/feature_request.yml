@@ -1,0 +1,55 @@
+name: Feature request
+description: Something arcet should do that it does not
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        arcet is deliberately small. Some things will be declined however good
+        the idea — multi-cloud, risk scores, remediation advice, anything that
+        writes to Azure, caching between runs, an LLM in the resolution path.
+        See [CONTRIBUTING.md](https://github.com/mtlabs-eng/arcet/blob/main/CONTRIBUTING.md#things-that-will-be-declined).
+
+  - type: textarea
+    id: question
+    attributes:
+      label: What question can you not answer today
+      description: >
+        Describe the situation, not the feature. "I need to know whether a
+        service principal can read secrets across three subscriptions" is more
+        useful than "add multi-subscription support" — the second forecloses
+        the design, the first leaves it open.
+    validations:
+      required: true
+
+  - type: textarea
+    id: today
+    attributes:
+      label: What you do instead right now
+      description: The portal, a script, `az` commands, asking someone.
+    validations:
+      required: true
+
+  - type: textarea
+    id: shape
+    attributes:
+      label: What the output would look like
+      description: Sketch it. Rough is fine.
+      render: text
+
+  - type: checkboxes
+    id: invariants
+    attributes:
+      label: Compatibility with the invariants
+      description: >
+        These are fixed. Confirming the idea fits them saves us both a round
+        trip.
+      options:
+        - label: It does not require writing to Azure
+          required: true
+        - label: It does not require keeping state between runs
+          required: true
+        - label: It reports facts rather than scores or recommendations
+          required: true
+        - label: It stays deterministic — same input, same output
+          required: true

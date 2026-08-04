@@ -97,6 +97,30 @@ skipped in silence.
 - **A whole tenant.** One subscription per run.
 - **Resource-level enumeration.** Scopes are reported as Azure states them; arcet does not expand a scope into the resources it covers.
 
+### How much of this has been proven
+
+The test suite is 259 tests and none of them touch the network — by design, so
+that everything with judgement in it is covered without a tenant. The cost of
+that design is that the network layer is only exercised when someone runs it
+for real, and five genuine bugs have already survived a fully green suite.
+
+Where it stands today:
+
+| Path | Exercised against a real tenant |
+|---|---|
+| Identity lookup, group walk, nested paths | ✅ |
+| Role assignments, including group-derived | ✅ |
+| Built-in and custom role definitions | ✅ |
+| Wildcard expansion and `NotActions` | ✅ |
+| Deny assignment detection | ✅ |
+| **PIM eligibility and activation** | ❌ **never** — the only tenant tested has no Entra ID P2 |
+| **`insufficient_read_access` warnings** | ❌ **never** — the only identity tested could read everything |
+
+The two unproven paths are covered by unit tests and fixtures, and the code is
+written to the documented API shapes. That is not the same as knowing it works.
+If you run arcet in a tenant with PIM, or with a genuinely restricted identity,
+a report either way would be useful.
+
 ### Read-only by construction
 
 - **It never writes to Azure.** Read-only credentials are enough and Owner is
@@ -460,6 +484,19 @@ returns, so the parsers under test are the parsers that run in production.
 `GET` to a `DELETE` and watch two independent tests fail.
 
 ---
+
+## Contributing
+
+Bug reports and pull requests are welcome — [CONTRIBUTING.md](CONTRIBUTING.md)
+covers the setup, the invariants a change cannot violate, and the shape of a
+change that adds support for a new Azure construction.
+
+Found a permission arcet failed to report, or a missing warning? That is a
+security issue in a tool like this one. Please read
+[SECURITY.md](SECURITY.md) and report it privately rather than in an issue.
+
+- [Changelog](CHANGELOG.md)
+- [Code of conduct](CODE_OF_CONDUCT.md)
 
 ## Licence
 

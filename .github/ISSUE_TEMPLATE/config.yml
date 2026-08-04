@@ -1,0 +1,10 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/mtlabs-eng/arcet/security/advisories/new
+    about: >
+      A permission arcet failed to report, a missing warning, or anything that
+      writes to Azure. Private, not a public issue.
+  - name: Ask a question
+    url: https://github.com/mtlabs-eng/arcet/discussions
+    about: Usage questions and anything that is not yet a bug report.

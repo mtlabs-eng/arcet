@@ -1,0 +1,84 @@
+name: Bug report
+description: Something arcet got wrong, or a crash
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: if this is a **security** issue — a permission arcet
+        failed to report, a missing warning, or anything that writes to Azure —
+        do not open a public issue. See
+        [SECURITY.md](https://github.com/mtlabs-eng/arcet/blob/main/SECURITY.md).
+
+        Scope paths, object ids and group names identify your tenant. Scrub
+        them before pasting anything below.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: command
+    attributes:
+      label: The command you ran
+      description: With identifiers replaced, but flags left exactly as they were.
+      placeholder: arcet whocan <upn> --subscription <id> --action 'Microsoft.Storage/*/delete'
+      render: console
+    validations:
+      required: true
+
+  - type: textarea
+    id: warnings
+    attributes:
+      label: Warnings in the output
+      description: >
+        The `⚠` block at the top, if there was one — or say "none". This is
+        usually the most useful part of a report: it tells us how much of the
+        picture arcet believed it had.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: shape
+    attributes:
+      label: The shape of the result
+      description: >
+        Run with `--format json` and paste the output of
+        `jq '{schema, complete, n: (.permissions|length), warnings: [.warnings[].kind], chains: ([.permissions[].derivation[].kind]|unique)}'`.
+        That describes the result without revealing anything about your tenant.
+      render: json
+
+  - type: input
+    id: version
+    attributes:
+      label: arcet version
+      description: Output of `arcet --version`.
+    validations:
+      required: true
+
+  - type: input
+    id: python
+    attributes:
+      label: Python version and OS
+      placeholder: "3.12.4, macOS 15"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: context
+    attributes:
+      label: Anything that applies
+      options:
+        - label: The identity holds Owner or Contributor
+        - label: Permissions reach it through groups
+        - label: Groups are nested
+        - label: The tenant uses PIM (Entra ID P2)
+        - label: There are deny assignments in scope
+        - label: There are assignments with ABAC conditions
+        - label: Some assignments come from a management group
+        - label: My credentials are read-only and may not see everything
