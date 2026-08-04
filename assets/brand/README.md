@@ -19,6 +19,11 @@ the path.
 | `favicon-16.svg` | Reduced mark for 16 px. See below. |
 | `favicon.ico` | 16, 32 and 48 px. The 16 px entry uses the reduced mark. |
 | `arcet-mark-32.png`, `-64.png`, `-128.png` | Raster mark, transparent background. |
+| `social-preview.png` | 1280×640, for the repository's social preview card. |
+
+`social-preview.png` has to be uploaded by hand — GitHub exposes no API for
+it. Settings → General → Social preview. It is versioned here so the card can
+be rebuilt without redesigning it.
 
 ## Colour
 
