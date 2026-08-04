@@ -12,7 +12,7 @@
 [![CI](https://github.com/mtlabs-eng/arcet/actions/workflows/ci.yml/badge.svg)](https://github.com/mtlabs-eng/arcet/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776AB)](https://www.python.org/)
 [![Licence](https://img.shields.io/badge/licence-Apache--2.0-D9812F)](LICENSE)
-[![Status](https://img.shields.io/badge/status-0.1.0a1%20alpha-8FA3B8)](#how-much-of-this-has-been-proven)
+[![Status](https://img.shields.io/badge/status-0.1.0a2%20alpha-8FA3B8)](#how-much-of-this-has-been-proven)
 [![Writes to Azure](https://img.shields.io/badge/writes%20to%20Azure-never-2E7D32)](#read-only-by-construction)
 
 </div>
@@ -102,7 +102,7 @@ skipped in silence.
 
 ### How much of this has been proven
 
-The test suite is 280 tests and none of them touch the network — by design, so
+The test suite is 317 tests and none of them touch the network — by design, so
 that everything with judgement in it is covered without a tenant. The cost of
 that design is that the network layer is only exercised when someone runs it
 for real, and five genuine bugs have already survived a fully green suite.
@@ -518,7 +518,7 @@ identity (UPN or object id)
 The split that matters is **pure logic versus network**. Parsing, expansion,
 `NotActions` subtraction, the group walk and chain construction are pure
 functions driven by recorded fixtures. The layer that talks to Azure is thin
-and dumb on purpose. That is why 280 tests can cover the judgement without a
+and dumb on purpose. That is why 317 tests can cover the judgement without a
 single one touching the network — and why the bugs that did survive were all
 found by running it against a real tenant, which is the honest limit of the
 approach.
@@ -529,7 +529,7 @@ approach.
 
 ```console
 uv sync --all-groups
-uv run pytest          # 280 tests, none touch the network
+uv run pytest          # 317 tests, none touch the network
 uv run ruff check .
 uv run ruff format .
 ```

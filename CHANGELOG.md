@@ -27,6 +27,10 @@ which is the intended friction. See
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.0a2] — 2026-08-04
+
 ### Added
 
 - **`--format list`** — one line per action, grouped, with a count of the
@@ -44,6 +48,15 @@ which is the intended friction. See
   produces, for comparing rows against each other. Cells wrap rather than
   truncate, so a row with a long scope becomes four lines tall and nothing is
   lost. It is the least compact of the three views; `list` is the dense one.
+
+- Test coverage is measured and gated at 93% across the modules where the
+  judgement lives. `reader.py` is excluded deliberately: it only fetches, and
+  covering it with mocks would test the mocks.
+
+- Fixture tests for the PIM eligibility, activation and deny assignment
+  parsers. They were the only uncovered code in `arm.py`, and also the paths
+  that have never run against a real tenant — no fixture test and no real
+  exercise was a doubled risk.
 
 ### Fixed
 
@@ -100,5 +113,6 @@ project was abandoned on 2026-08-03 and the repository reused; only
 `scripts/pin.sh`, the licence and the git history carried over. The linter is
 still reachable in the history at `482723d`.
 
-[Unreleased]: https://github.com/mtlabs-eng/arcet/compare/v0.1.0a1...HEAD
+[Unreleased]: https://github.com/mtlabs-eng/arcet/compare/v0.1.0a2...HEAD
+[0.1.0a2]: https://github.com/mtlabs-eng/arcet/releases/tag/v0.1.0a2
 [0.1.0a1]: https://github.com/mtlabs-eng/arcet/releases/tag/v0.1.0a1
