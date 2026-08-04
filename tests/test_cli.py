@@ -6,9 +6,11 @@ later milestones keep the property by feeding recorded fixtures instead.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
+import typer.main
 from typer.testing import CliRunner
 
 from arcet import __version__
@@ -16,6 +18,23 @@ from arcet import cli as cli_module
 from arcet.cli import OutputFormat, app
 
 runner = CliRunner()
+
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def help_text(*args: str) -> str:
+    """Render help at a fixed wide terminal, with styling stripped.
+
+    Asserting on help output is asserting on a rendering, and a rendering
+    depends on width and on whether Rich thinks it has a terminal. At 80
+    columns `--subscription` wraps and a plain substring check fails — which is
+    exactly how these tests passed locally and failed in CI for eight commits.
+    Pinning the width and removing the escape codes makes the assertion about
+    the interface rather than about the window it was drawn in.
+    """
+    result = runner.invoke(app, [*args, "--help"], env={"COLUMNS": "200"})
+    assert result.exit_code == 0
+    return _ANSI.sub("", result.stdout)
 
 
 def test_version_exits_clean() -> None:
@@ -33,7 +52,7 @@ def test_version_reports_the_package_version() -> None:
 def test_help_exits_clean(flag: str) -> None:
     result = runner.invoke(app, [flag])
     assert result.exit_code == 0
-    assert "whocan" in result.stdout
+    assert "whocan" in _ANSI.sub("", result.stdout)
 
 
 def test_help_states_the_read_only_invariant() -> None:
@@ -42,15 +61,26 @@ def test_help_states_the_read_only_invariant() -> None:
     It is the reason someone runs this against production with real
     credentials, so it belongs where they see it.
     """
-    result = runner.invoke(app, ["--help"])
-    assert "never writes" in result.stdout.lower()
+    assert "never writes" in help_text().lower()
 
 
 def test_whocan_declares_the_v01_flag_surface() -> None:
-    result = runner.invoke(app, ["whocan", "--help"])
-    assert result.exit_code == 0
-    for flag in ("--subscription", "--format", "--expand", "--no-expand"):
-        assert flag in result.stdout
+    text = help_text("whocan")
+    for flag in ("--subscription", "--action", "--format", "--expand", "--no-expand"):
+        assert flag in text
+
+
+def test_the_flag_surface_is_declared_in_the_command_itself() -> None:
+    """Backstop for the test above, independent of any rendering.
+
+    If the help text ever changes shape again, this still fails when a flag is
+    genuinely gone rather than merely wrapped.
+    """
+    command = typer.main.get_command(app)
+    whocan = command.commands["whocan"]  # type: ignore[attr-defined]
+    declared = {opt for param in whocan.params for opt in param.opts}
+    for flag in ("--subscription", "--action", "--format", "--expand"):
+        assert flag in declared
 
 
 def test_whocan_requires_a_subscription() -> None:
