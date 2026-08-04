@@ -1,0 +1,80 @@
+{
+  "eligibilityInstances": [
+    {
+      "id": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleEligibilityScheduleInstances/44444444-aaaa-bbbb-cccc-444444444444",
+      "name": "44444444-aaaa-bbbb-cccc-444444444444",
+      "type": "Microsoft.Authorization/roleEligibilityScheduleInstances",
+      "properties": {
+        "scope": "/subscriptions/00000000-1111-2222-3333-444444444444",
+        "roleDefinitionId": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleDefinitions/18d7d88d-d35e-4fb5-a5c3-7773c20a72d9",
+        "principalId": "99999999-8888-7777-6666-555555555555",
+        "principalType": "User",
+        "status": "Provisioned",
+        "memberType": "Direct",
+        "startDateTime": "2026-01-05T10:00:00Z",
+        "endDateTime": "2027-01-05T10:00:00Z"
+      }
+    },
+    {
+      "id": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleEligibilityScheduleInstances/55555555-aaaa-bbbb-cccc-555555555555",
+      "name": "55555555-aaaa-bbbb-cccc-555555555555",
+      "type": "Microsoft.Authorization/roleEligibilityScheduleInstances",
+      "properties": {
+        "scope": "/subscriptions/00000000-1111-2222-3333-444444444444",
+        "roleDefinitionId": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleDefinitions/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        "principalId": "aaaaaaaa-0000-0000-0000-000000000001",
+        "principalType": "Group",
+        "status": "Provisioned",
+        "memberType": "Group"
+      }
+    }
+  ],
+  "assignmentInstances": [
+    {
+      "id": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleAssignmentScheduleInstances/66666666-aaaa-bbbb-cccc-666666666666",
+      "name": "66666666-aaaa-bbbb-cccc-666666666666",
+      "properties": {
+        "scope": "/subscriptions/00000000-1111-2222-3333-444444444444",
+        "roleDefinitionId": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleDefinitions/18d7d88d-d35e-4fb5-a5c3-7773c20a72d9",
+        "principalId": "99999999-8888-7777-6666-555555555555",
+        "principalType": "User",
+        "assignmentType": "Activated",
+        "memberType": "Direct",
+        "status": "Provisioned",
+        "originRoleAssignmentId": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleAssignments/11111111-aaaa-bbbb-cccc-111111111111",
+        "linkedRoleEligibilityScheduleId": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleEligibilitySchedules/44444444-aaaa-bbbb-cccc-444444444444"
+      }
+    },
+    {
+      "id": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleAssignmentScheduleInstances/77777777-aaaa-bbbb-cccc-777777777777",
+      "name": "77777777-aaaa-bbbb-cccc-777777777777",
+      "properties": {
+        "scope": "/subscriptions/00000000-1111-2222-3333-444444444444",
+        "roleDefinitionId": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleDefinitions/4633458b-17de-408a-b874-0445c86b69e6",
+        "principalId": "99999999-8888-7777-6666-555555555555",
+        "principalType": "User",
+        "assignmentType": "Assigned",
+        "memberType": "Direct",
+        "status": "Provisioned",
+        "originRoleAssignmentId": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/roleAssignments/22222222-aaaa-bbbb-cccc-222222222222"
+      }
+    }
+  ],
+  "denyAssignments": [
+    {
+      "id": "/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Authorization/denyAssignments/88888888-aaaa-bbbb-cccc-888888888888",
+      "name": "88888888-aaaa-bbbb-cccc-888888888888",
+      "type": "Microsoft.Authorization/denyAssignments",
+      "properties": {
+        "denyAssignmentName": "Deny writes to managed resources",
+        "description": "Created by a managed application.",
+        "isSystemProtected": true,
+        "scope": "/subscriptions/00000000-1111-2222-3333-444444444444/resourceGroups/rg-managed",
+        "doNotApplyToChildScopes": false,
+        "permissions": [
+          { "actions": ["*"], "notActions": ["Microsoft.Resources/subscriptions/resourceGroups/read"] }
+        ]
+      }
+    }
+  ]
+}

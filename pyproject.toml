@@ -41,7 +41,7 @@ Issues = "https://github.com/mtlabs-eng/arcet/issues"
 arcet = "arcet.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8", "ruff>=0.6"]
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/arcet"]
@@ -80,3 +80,24 @@ ban-relative-imports = "all"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers --strict-config"
+
+[tool.coverage.run]
+source = ["src/arcet"]
+branch = true
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+# The gate applies to the modules where the judgement lives. reader.py is the
+# thin layer that only fetches, and it cannot be covered without a tenant —
+# covering it with mocks would test the mocks. Its correctness is established
+# by running arcet for real, which is a different exercise and is reported in
+# the README rather than pretended at here.
+omit = ["src/arcet/reader.py", "src/arcet/__main__.py"]
+# Currently 95%. The floor sits just below, so an ordinary change does not
+# trip it and a module quietly losing its tests does.
+fail_under = 93
+show_missing = true

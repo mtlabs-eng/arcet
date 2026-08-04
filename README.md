@@ -102,7 +102,7 @@ skipped in silence.
 
 ### How much of this has been proven
 
-The test suite is 259 tests and none of them touch the network — by design, so
+The test suite is 280 tests and none of them touch the network — by design, so
 that everything with judgement in it is covered without a tenant. The cost of
 that design is that the network layer is only exercised when someone runs it
 for real, and five genuine bugs have already survived a fully green suite.
@@ -123,6 +123,12 @@ The two unproven paths are covered by unit tests and fixtures, and the code is
 written to the documented API shapes. That is not the same as knowing it works.
 If you run arcet in a tenant with PIM, or with a genuinely restricted identity,
 a report either way would be useful.
+
+Coverage sits at **95%** across the modules where the judgement lives — the
+model, the group walk, wildcard expansion, the resolver and the renderers.
+`reader.py` is excluded from that figure on purpose: it is the thin layer that
+only fetches, and covering it with mocks would test the mocks. Its correctness
+comes from running arcet for real, which is what the table above reports.
 
 ### Read-only by construction
 
@@ -459,7 +465,7 @@ identity (UPN or object id)
 The split that matters is **pure logic versus network**. Parsing, expansion,
 `NotActions` subtraction, the group walk and chain construction are pure
 functions driven by recorded fixtures. The layer that talks to Azure is thin
-and dumb on purpose. That is why 258 tests can cover the judgement without a
+and dumb on purpose. That is why 280 tests can cover the judgement without a
 single one touching the network — and why the bugs that did survive were all
 found by running it against a real tenant, which is the honest limit of the
 approach.
@@ -470,7 +476,7 @@ approach.
 
 ```console
 uv sync --all-groups
-uv run pytest          # 258 tests, none touch the network
+uv run pytest          # 280 tests, none touch the network
 uv run ruff check .
 uv run ruff format .
 ```

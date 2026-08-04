@@ -40,7 +40,7 @@ jobs:
         run: uv sync --locked --all-groups
 
       - name: pytest
-        run: uv run pytest
+        run: uv run pytest --cov --cov-report=term
 
   lint:
     name: lint
