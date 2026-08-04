@@ -46,6 +46,13 @@ dev = ["pytest>=8", "ruff>=0.6"]
 [tool.hatch.build.targets.wheel]
 packages = ["src/arcet"]
 
+[tool.hatch.build.targets.sdist]
+# The brand reference is 932 KB of artwork that nothing needs in order to
+# build or run arcet. Shipping it would make the source distribution twenty
+# times larger than the wheel, which is a poor look on a tool whose argument
+# is that it keeps its footprint small.
+exclude = ["/design"]
+
 [tool.ruff]
 line-length = 88
 src = ["src", "tests"]
