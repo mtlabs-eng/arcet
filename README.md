@@ -1,6 +1,9 @@
 <div align="center">
 
-<img src="docs/logo.svg" alt="arcet" width="360">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/brand/arcet-logo-dark.svg">
+  <img src="assets/brand/arcet-logo.svg" alt="arcet" width="300">
+</picture>
 
 ### Effective Azure permissions, with the derivation chain that explains them.
 
@@ -498,9 +501,22 @@ security issue in a tool like this one. Please read
 - [Changelog](CHANGELOG.md)
 - [Code of conduct](CODE_OF_CONDUCT.md)
 
-## Licence
+## Identity
 
-Apache-2.0. See [LICENSE](LICENSE).
+<img src="assets/brand/arcet-mark.svg" alt="" width="112" align="right">
 
 The name is from Latin *arcēre* — to keep out, to contain. Same root as *arx*,
 citadel, and *arcanum*.
+
+The mark says the same thing the tool does. A continuous route enters from
+outside, passes between two boundaries, and ends at a single copper terminal.
+A permission is not a fact standing on its own; it is the end of a path, and
+showing the path is the whole job.
+
+Copper appears once, on the terminal, and is never used for anything else.
+
+Assets, palette, clear space and usage: [`assets/brand/`](assets/brand/).
+
+## Licence
+
+Apache-2.0. See [LICENSE](LICENSE).
