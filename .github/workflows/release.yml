@@ -1,0 +1,112 @@
+name: release
+
+# Fires on a version tag. Building and publishing are separate jobs so that a
+# failed publish never leaves a half-made GitHub release behind, and so the
+# artefacts that go to PyPI are byte-for-byte the ones attached to the release.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+
+      # A tag that does not match the version in pyproject.toml would publish
+      # something under a name nobody can trace back. Cheaper to stop here.
+      - name: the tag matches the packaged version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          packaged="$(uv run --no-project python -c 'import tomllib,pathlib;
+          print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')"
+          echo "tag=$tag packaged=$packaged"
+          test "$tag" = "$packaged"
+
+      - name: install
+        run: uv sync --locked --all-groups
+
+      # The suite has to be green at the tagged commit, not merely at some
+      # commit on main before it.
+      - name: pytest
+        run: uv run pytest --cov --cov-report=term
+
+      - name: build
+        run: uv build
+
+      - name: the wheel installs and runs
+        run: |
+          uv venv /tmp/check
+          VIRTUAL_ENV=/tmp/check uv pip install dist/*.whl
+          /tmp/check/bin/arcet --version
+
+      - name: checksums
+        run: cd dist && sha256sum arcet-* > SHA256SUMS && cat SHA256SUMS
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist
+          path: dist/
+
+  github-release:
+    name: github release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # the only write permission in this repository, and only here
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dist
+          path: dist
+
+      # Anything carrying a pre-release suffix is marked as such, so GitHub
+      # never advertises an alpha as the latest release.
+      - name: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          prerelease=""
+          case "${GITHUB_REF_NAME}" in
+            *a*|*b*|*rc*|*dev*) prerelease="--prerelease" ;;
+          esac
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "arcet ${GITHUB_REF_NAME#v}" \
+            --notes "See [CHANGELOG](https://github.com/${GH_REPO}/blob/${GITHUB_REF_NAME}/CHANGELOG.md)." \
+            $prerelease \
+            dist/*
+
+  pypi:
+    name: pypi
+    needs: build
+    runs-on: ubuntu-latest
+    # Requires a `pypi` environment on the repository. Add a required reviewer
+    # to it and publishing needs a human to approve, which is the point: a
+    # pushed tag should not be able to put a release on PyPI on its own.
+    environment:
+      name: pypi
+      url: https://pypi.org/p/arcet
+    permissions:
+      id-token: write # trusted publishing; no API token is stored anywhere
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dist
+          path: dist
+
+      # SHA256SUMS is for the GitHub release, not for the index.
+      - name: keep only distributions
+        run: rm -f dist/SHA256SUMS
+
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
