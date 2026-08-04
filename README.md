@@ -12,7 +12,7 @@
 [![CI](https://github.com/mtlabs-eng/arcet/actions/workflows/ci.yml/badge.svg)](https://github.com/mtlabs-eng/arcet/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776AB)](https://www.python.org/)
 [![Licence](https://img.shields.io/badge/licence-Apache--2.0-D9812F)](LICENSE)
-[![Status](https://img.shields.io/badge/status-v0.1%20alpha-8FA3B8)](#not-in-v01)
+[![Status](https://img.shields.io/badge/status-0.1.0a1%20alpha-8FA3B8)](#how-much-of-this-has-been-proven)
 [![Writes to Azure](https://img.shields.io/badge/writes%20to%20Azure-never-2E7D32)](#read-only-by-construction)
 
 </div>
@@ -162,9 +162,15 @@ develop it — the wheel installs with `pip` or `pipx` like anything else.
 Once published, this becomes:
 
 ```console
-uvx arcet --help          # run without installing
-pipx install arcet        # or install it
+uvx arcet@latest --help   # run without installing
+pipx install arcet --pip-args=--pre
 ```
+
+The `--pre` is not an oversight. Releases carry an `a` suffix while parts of
+the tool remain unproven against a real tenant, and `pip` and `uv` will not
+install an alpha unless asked. That friction is deliberate: it means nobody
+ends up depending on this by accident before reading
+[what has actually been proven](#how-much-of-this-has-been-proven).
 
 ---
 

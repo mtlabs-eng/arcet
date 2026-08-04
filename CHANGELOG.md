@@ -5,14 +5,31 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-The JSON output carries its own `schema` integer, versioned separately from the
-package. A breaking change to that shape bumps it and is called out here.
+## Versioning
+
+arcet is pre-1.0, so the minor number carries breaking changes. There are two
+contracts, and they move independently:
+
+- **The command line.** Flags, arguments and exit codes. A removed or
+  redefined flag is breaking.
+- **The JSON output.** It carries its own `schema` integer, bumped only when
+  the shape changes in a way that breaks a consumer. A new optional field does
+  not bump it; a renamed or removed one does. Anything that changes it is
+  called out here.
+
+The table output is *not* a contract. It is for reading, and it will change.
+Parse the JSON.
+
+`a` suffixes mean alpha: released, but with parts that have not been proven
+against a real tenant. `pip` and `uv` will not install an alpha unless asked,
+which is the intended friction. See
+[How much of this has been proven](README.md#how-much-of-this-has-been-proven).
 
 ## [Unreleased]
 
 Nothing yet.
 
-## [0.1.0] — unreleased
+## [0.1.0a1] — unreleased
 
 First release. `arcet whocan` resolves effective Azure permissions for one
 identity in one subscription, and shows the derivation chain behind each one.
@@ -63,5 +80,6 @@ project was abandoned on 2026-08-03 and the repository reused; only
 `scripts/pin.sh`, the licence and the git history carried over. The linter is
 still reachable in the history at `482723d`.
 
-[Unreleased]: https://github.com/mtlabs-eng/arcet/compare/main...HEAD
-[0.1.0]: https://github.com/mtlabs-eng/arcet/releases/tag/v0.1.0
+<!-- No release tag exists yet, so there is nothing to link 0.1.0a1 to. The
+     link goes in when the tag is cut, rather than pointing at a 404 now. -->
+[Unreleased]: https://github.com/mtlabs-eng/arcet/commits/main

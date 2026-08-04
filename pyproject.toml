@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "arcet"
-version = "0.1.0.dev0"
+version = "0.1.0a1"
 description = "Effective Azure permissions, with the derivation chain that explains them."
 readme = "README.md"
 requires-python = ">=3.11"
