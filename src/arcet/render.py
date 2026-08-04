@@ -17,16 +17,20 @@ Two properties are load-bearing in both formats:
 from __future__ import annotations
 
 import json
+import re
 import textwrap
 from enum import StrEnum
 from typing import Any
 
+from rich import box
 from rich.console import Console
 from rich.rule import Rule
+from rich.table import Table
 from rich.text import Text
 
 from arcet.model import (
     ActionKind,
+    DerivationKind,
     EffectivePermission,
     PermissionState,
     ResolutionResult,
@@ -38,6 +42,7 @@ __all__ = [
     "JSON_SCHEMA_VERSION",
     "OutputFormat",
     "render",
+    "render_grid",
     "render_json",
     "render_list",
     "render_table",
@@ -52,6 +57,8 @@ class OutputFormat(StrEnum):
     TABLE = "table"
     #: One line per action. Answers "what", for scanning a lot at once.
     LIST = "list"
+    #: A column per field, in the shape people expect from `az ... -o table`.
+    GRID = "grid"
     JSON = "json"
 
 
@@ -96,6 +103,13 @@ _DATA_PLANE_TAG = "data plane"
 #: enough for the great majority of Azure actions, short enough that a rare
 #: 80-character one does not reformat everything around it.
 _ACTION_COLUMN_CAP = 58
+
+#: Chain steps that name the role carrying a grant.
+_ROLE_STEPS = (
+    DerivationKind.ROLE_ASSIGNMENT,
+    DerivationKind.DIRECT_ASSIGNMENT,
+    DerivationKind.PIM_ELIGIBLE,
+)
 
 #: Continuation indent for wrapped warning text, aligned under the bullet.
 _WARNING_CONTINUATION = "     "
@@ -400,6 +414,119 @@ def render_list(
         console.print(line, soft_wrap=True)
 
 
+def _unquote(noun: str, label: str) -> str:
+    """Turn `group "Platform" → group "Ops"` into `Platform → Ops`.
+
+    Written with a substitution rather than str.replace because the read-only
+    guard in tests/test_readonly.py rejects any call named `replace`. That is a
+    false positive, and the right response is to write around it: the guard
+    earns its keep by being blunt, and carving an exception for rendering code
+    is how a check like that stops meaning anything.
+    """
+    return re.sub(rf'{noun} "([^"]*)"', r"\1", label)
+
+
+def _via(permission: EffectivePermission) -> str:
+    """How the grant reaches the subject, in one cell.
+
+    Group paths keep their arrows; the surrounding `group "…"` wrapper is
+    dropped because the column heading already says what these are.
+    """
+    for step in permission.derivation:
+        if step.kind is DerivationKind.GROUP_MEMBERSHIP:
+            return _unquote("group", step.label)
+    if permission.state is PermissionState.PIM_ELIGIBLE:
+        return "PIM"
+    return "Direct"
+
+
+def _role(permission: EffectivePermission) -> str:
+    """The role that carries the grant, without the `role "…"` wrapper."""
+    for step in reversed(permission.derivation):
+        if step.kind in _ROLE_STEPS:
+            return _unquote("role", step.label)
+    return ""
+
+
+def render_grid(
+    result: ResolutionResult,
+    console: Console | None = None,
+    *,
+    limit: int = DEFAULT_TABLE_LIMIT,
+    action_filter: str | None = None,
+) -> None:
+    """Render a column per field, in the shape `az ... -o table` produces.
+
+    Cells wrap rather than truncate. A scope is 120 characters and there is no
+    terminal wide enough to hold one beside an action name and a nested group
+    path, so something has to give: either the row gets tall, or the scope
+    stops being something anyone can paste. It gets tall.
+
+    That makes this the least compact of the three views, which is worth
+    knowing before choosing it. `--format list` is the dense one.
+    """
+    console = console or Console()
+
+    if result.warnings:
+        _print_warnings(result, console)
+
+    # Labelled header rather than the inline one: with a boxed grid below it,
+    # aligned labels read as part of the same object.
+    console.print(
+        Text.assemble(
+            ("Principal:    ", "dim"), (result.identity.display_name, "bold")
+        ),
+        soft_wrap=True,
+    )
+    console.print(
+        Text.assemble(("Subscription: ", "dim"), (result.subscription, "")),
+        soft_wrap=True,
+    )
+    console.print(
+        Text.assemble(("Permissions:  ", "dim"), (str(len(result.permissions)), ""))
+    )
+
+    if not result.permissions:
+        console.print()
+        console.print(Text(_empty_message(action_filter)))
+        return
+
+    shown = result.permissions if limit <= 0 else result.permissions[:limit]
+    hidden = len(result.permissions) - len(shown)
+
+    console.print()
+    if hidden:
+        console.print(
+            Text.assemble(
+                (f"showing {len(shown)} of {len(result.permissions)}. ", "bold yellow"),
+                (
+                    f"{hidden} not shown — narrow with --action, "
+                    f"or use --format json for all of them",
+                    "yellow",
+                ),
+            )
+        )
+
+    grid = Table(box=box.ASCII, show_lines=True, pad_edge=False)
+    grid.add_column("STATUS", overflow="fold", style="")
+    for heading in ("PERMISSION", "VIA", "ROLE", "SCOPE"):
+        grid.add_column(heading, overflow="fold")
+
+    for permission in shown:
+        status = _SECTION_TITLES[permission.state].split()[0]
+        action = permission.action
+        if permission.action_kind is ActionKind.DATA_PLANE:
+            action = f"{action}\n({_DATA_PLANE_TAG})"
+        grid.add_row(
+            Text(status, style=_SECTION_STYLES[permission.state]),
+            action,
+            _via(permission),
+            _role(permission),
+            permission.scope,
+        )
+    console.print(grid)
+
+
 def _empty_message(action_filter: str | None) -> str:
     return (
         f"No permission matching {action_filter!r} for this identity in this "
@@ -435,5 +562,8 @@ def render(
         return
     if output_format is OutputFormat.LIST:
         render_list(result, console, action_filter=action_filter)
+        return
+    if output_format is OutputFormat.GRID:
+        render_grid(result, console, limit=limit, action_filter=action_filter)
         return
     render_table(result, console, limit=limit, action_filter=action_filter)

@@ -313,7 +313,7 @@ so they return instantly.
 
 ## Reading the output
 
-### Two views, two questions
+### Three views, three questions
 
 `--format table` is the default and answers **why**: one permission at a time,
 with its chain, nothing abbreviated. It costs four or five lines each, which is
@@ -334,11 +334,35 @@ ACTIVE   Microsoft.Storage/storageAccounts/delete            1 path
 
 Scan with `list`, then `--action` the one that surprised you and read the chain.
 
-There is deliberately **no column-per-field grid**. It was tried. An action
-name, an Azure scope and a nested group path come to roughly 230 characters, so
-every column ends up elided even at 200 columns wide — and a truncated scope is
-one nobody can paste or act on. The list view drops the chain rather than
-shrinking it, and nothing it does show is ever cut.
+`--format grid` answers **which**: a column per field, in the shape
+`az ... -o table` produces, for comparing rows against each other.
+
+```console
+$ arcet whocan alice@example.com -s <sub> --format grid \
+        --action 'Microsoft.Storage/storageAccounts/delete'
+
+Principal:    alice@example.com
+Subscription: 00000000-1111-2222-3333-444444444444
+Permissions:  3
+
++--------+------------------------------------------+--------+-------------+---------------------+
+|STATUS  | PERMISSION                               | VIA    | ROLE        | SCOPE               |
+|--------+------------------------------------------+--------+-------------+---------------------|
+|ACTIVE  | Microsoft.Storage/storageAccounts/delete | Direct | Contributor | /subscriptions/0000 |
+|        |                                          |        |             | 0000-1111-2222-3333 |
+|        |                                          |        |             | -444444444444       |
+|--------+------------------------------------------+--------+-------------+---------------------|
+|ACTIVE  | Microsoft.Storage/storageAccounts/delete | Ops    | Owner       | /subscriptions/…/re |
+|        |                                          |        |             | sourceGroups/demo/… |
++--------+------------------------------------------+--------+-------------+---------------------+
+```
+
+Cells **wrap, they do not truncate**. An Azure scope runs to about 120
+characters and no terminal holds one beside an action name and a nested group
+path, so something has to give: either the row gets tall, or the scope stops
+being something you can paste. It gets tall. That makes `grid` the least
+compact of the three, which is worth knowing before choosing it — `list` is the
+dense one.
 
 ### Warnings
 

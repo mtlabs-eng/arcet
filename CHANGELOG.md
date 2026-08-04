@@ -40,6 +40,11 @@ which is the intended friction. See
   scope cannot be pasted or acted on, and nothing here is allowed to be cut
   silently. The list view drops the chain instead of shrinking it.
 
+- **`--format grid`** — a column per field, in the shape `az ... -o table`
+  produces, for comparing rows against each other. Cells wrap rather than
+  truncate, so a row with a long scope becomes four lines tall and nothing is
+  lost. It is the least compact of the three views; `list` is the dense one.
+
 ### Fixed
 
 - The header line no longer folds mid-phrase on a narrow terminal.
