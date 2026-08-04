@@ -29,7 +29,7 @@ which is the intended friction. See
 
 Nothing yet.
 
-## [0.1.0a1] — unreleased
+## [0.1.0a1] — 2026-08-04
 
 First release. `arcet whocan` resolves effective Azure permissions for one
 identity in one subscription, and shows the derivation chain behind each one.
@@ -80,6 +80,5 @@ project was abandoned on 2026-08-03 and the repository reused; only
 `scripts/pin.sh`, the licence and the git history carried over. The linter is
 still reachable in the history at `482723d`.
 
-<!-- No release tag exists yet, so there is nothing to link 0.1.0a1 to. The
-     link goes in when the tag is cut, rather than pointing at a 404 now. -->
-[Unreleased]: https://github.com/mtlabs-eng/arcet/commits/main
+[Unreleased]: https://github.com/mtlabs-eng/arcet/compare/v0.1.0a1...HEAD
+[0.1.0a1]: https://github.com/mtlabs-eng/arcet/releases/tag/v0.1.0a1
