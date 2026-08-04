@@ -33,10 +33,13 @@ from arcet.model import (
 )
 
 __all__ = [
+    "DEFAULT_LIST_LIMIT",
+    "DEFAULT_TABLE_LIMIT",
     "JSON_SCHEMA_VERSION",
     "OutputFormat",
     "render",
     "render_json",
+    "render_list",
     "render_table",
     "result_to_dict",
 ]
@@ -45,7 +48,10 @@ __all__ = [
 class OutputFormat(StrEnum):
     """How to render a resolution result. Lives here, next to the renderers."""
 
+    #: The chain, indented. Answers "why", one permission at a time.
     TABLE = "table"
+    #: One line per action. Answers "what", for scanning a lot at once.
+    LIST = "list"
     JSON = "json"
 
 
@@ -76,6 +82,20 @@ _SECTION_ORDER = (PermissionState.ACTIVE, PermissionState.PIM_ELIGIBLE)
 #: of actions, and the table is for reading, not for exporting. JSON is never
 #: truncated.
 DEFAULT_TABLE_LIMIT = 50
+
+#: The list view spends one line per action instead of four or five, so it can
+#: afford to show more before cutting.
+DEFAULT_LIST_LIMIT = 200
+
+#: Shown against a data plane action in the list view. Reading a secret's value
+#: is not the same grant as reading its properties, and the list is where that
+#: distinction is easiest to lose.
+_DATA_PLANE_TAG = "data plane"
+
+#: How far the action column is padded before alignment is given up. Long
+#: enough for the great majority of Azure actions, short enough that a rare
+#: 80-character one does not reformat everything around it.
+_ACTION_COLUMN_CAP = 58
 
 #: Continuation indent for wrapped warning text, aligned under the bullet.
 _WARNING_CONTINUATION = "     "
@@ -217,7 +237,10 @@ def _print_header(result: ResolutionResult, console: Console) -> None:
             (f"subscription {result.subscription}", ""),
             ("  ·  ", "dim"),
             (f"{total} {noun}", "dim"),
-        )
+        ),
+        # A subscription id plus a UPN already runs past 80 columns; folding it
+        # puts "permissions" alone on its own line and reads like a mistake.
+        soft_wrap=True,
     )
 
 
@@ -299,6 +322,93 @@ def _print_permission(permission: EffectivePermission, console: Console) -> None
     )
 
 
+def render_list(
+    result: ResolutionResult,
+    console: Console | None = None,
+    *,
+    limit: int = DEFAULT_LIST_LIMIT,
+    action_filter: str | None = None,
+) -> None:
+    """Render one line per action, for scanning rather than for explaining.
+
+    A grid with a column per field was the obvious alternative and does not
+    survive real data: an action name, a scope and a nested group path add up
+    to roughly 230 characters, so every column ends up elided even at 200
+    columns wide. A truncated scope is one nobody can paste or act on.
+
+    This drops the chain instead of shrinking it. You see what the identity can
+    do; `--action` then shows why, in full, with nothing cut.
+    """
+    console = console or Console()
+
+    if result.warnings:
+        _print_warnings(result, console)
+    _print_header(result, console)
+
+    if not result.permissions:
+        console.print()
+        console.print(Text(_empty_message(action_filter)))
+        return
+
+    # Same action reached by several chains is one line with a count, not one
+    # line per chain: the chains are exactly what this view is not showing.
+    grouped: dict[tuple[str, ActionKind, PermissionState], int] = {}
+    for permission in result.permissions:
+        key = (permission.action, permission.action_kind, permission.state)
+        grouped[key] = grouped.get(key, 0) + 1
+
+    entries = list(grouped.items())
+    shown = entries if limit <= 0 else entries[:limit]
+    hidden = len(entries) - len(shown)
+
+    console.print()
+    if hidden:
+        console.print(
+            Text.assemble(
+                (f"showing {len(shown)} of {len(entries)} actions. ", "bold yellow"),
+                (
+                    f"{hidden} not shown — narrow with --action, "
+                    f"or use --format json for all of them",
+                    "yellow",
+                ),
+            )
+        )
+        console.print()
+
+    # Padding to the widest action would let one outlier stretch every row:
+    # Microsoft.Authorization/roleEligibilityScheduleRequests/whenApprovalRequired/write
+    # is 82 characters, and aligning to it pushes the count off the screen for
+    # the other 199 lines. Rows past the cap simply lose their alignment, which
+    # costs one row rather than all of them.
+    width = min(
+        max(len(action) for action, _, _ in (k for k, _ in shown)),
+        _ACTION_COLUMN_CAP,
+    )
+    for (action, action_kind, state), paths in shown:
+        line = Text()
+        line.append(
+            f"{_SECTION_TITLES[state].split()[0]:<9}", style=_SECTION_STYLES[state]
+        )
+        line.append(action)
+        # Always at least two spaces: an action past the cap would otherwise
+        # run straight into its own count — "…/write2 paths".
+        line.append(" " * max(2, width + 2 - len(action)))
+        if action_kind is ActionKind.DATA_PLANE:
+            line.append(f"{_DATA_PLANE_TAG}  ", style="dim italic")
+        noun = "path" if paths == 1 else "paths"
+        line.append(f"{paths} {noun}", style="dim")
+        console.print(line, soft_wrap=True)
+
+
+def _empty_message(action_filter: str | None) -> str:
+    return (
+        f"No permission matching {action_filter!r} for this identity in this "
+        f"subscription."
+        if action_filter
+        else "No permissions found for this identity in this subscription."
+    )
+
+
 def render(
     result: ResolutionResult,
     output_format: OutputFormat,
@@ -322,5 +432,8 @@ def render(
         (console or Console()).print(
             render_json(result), markup=False, highlight=False, soft_wrap=True
         )
+        return
+    if output_format is OutputFormat.LIST:
+        render_list(result, console, action_filter=action_filter)
         return
     render_table(result, console, limit=limit, action_filter=action_filter)

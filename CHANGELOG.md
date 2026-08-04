@@ -27,7 +27,22 @@ which is the intended friction. See
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **`--format list`** — one line per action, grouped, with a count of the
+  chains that lead to it. The chain view spends four or five lines per
+  permission, which is unreadable at fifty of them; this answers *what* so the
+  default can go on answering *why*.
+
+  A column-per-field grid was prototyped first and rejected on evidence: an
+  action name, an Azure scope and a nested group path come to roughly 230
+  characters, so every column is elided even at 200 columns wide. A truncated
+  scope cannot be pasted or acted on, and nothing here is allowed to be cut
+  silently. The list view drops the chain instead of shrinking it.
+
+### Fixed
+
+- The header line no longer folds mid-phrase on a narrow terminal.
 
 ## [0.1.0a1] — 2026-08-04
 

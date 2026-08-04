@@ -313,6 +313,35 @@ so they return instantly.
 
 ## Reading the output
 
+### Two views, two questions
+
+`--format table` is the default and answers **why**: one permission at a time,
+with its chain, nothing abbreviated. It costs four or five lines each, which is
+the right trade when you have narrowed with `--action` and the wrong one when
+you have not.
+
+`--format list` answers **what**: one line per action, grouped, with a count of
+how many distinct chains lead to it.
+
+```console
+$ arcet whocan alice@example.com -s <sub> --format list
+
+ACTIVE   Microsoft.Authorization/roleAssignments/write       2 paths
+ELIGIBLE Microsoft.Authorization/roleAssignments/write       1 path
+ACTIVE   Microsoft.KeyVault/vaults/secrets/getSecret/action  data plane  1 path
+ACTIVE   Microsoft.Storage/storageAccounts/delete            1 path
+```
+
+Scan with `list`, then `--action` the one that surprised you and read the chain.
+
+There is deliberately **no column-per-field grid**. It was tried. An action
+name, an Azure scope and a nested group path come to roughly 230 characters, so
+every column ends up elided even at 200 columns wide — and a truncated scope is
+one nobody can paste or act on. The list view drops the chain rather than
+shrinking it, and nothing it does show is ever cut.
+
+### Warnings
+
 Warnings print **before everything else**, so piping through `head` still shows
 them. A result carrying warnings is never presented as complete.
 

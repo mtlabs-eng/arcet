@@ -69,7 +69,14 @@ def whocan(
     ],
     output_format: Annotated[
         OutputFormat,
-        typer.Option("--format", "-f", help="Output format."),
+        typer.Option(
+            "--format",
+            "-f",
+            help=(
+                "table shows the chain behind each permission; list is one "
+                "line per action for scanning; json is the machine contract."
+            ),
+        ),
     ] = OutputFormat.TABLE,
     action: Annotated[
         str | None,
