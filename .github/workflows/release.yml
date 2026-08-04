@@ -6,6 +6,9 @@ name: release
 on:
   push:
     tags: ["v*"]
+  # Lets the build and its checks be exercised without a tag. Publishing is
+  # guarded on the ref below, so a manual run can never release anything.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -26,6 +29,7 @@ jobs:
       # A tag that does not match the version in pyproject.toml would publish
       # something under a name nobody can trace back. Cheaper to stop here.
       - name: the tag matches the packaged version
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           tag="${GITHUB_REF_NAME#v}"
           packaged="$(uv run --no-project python -c 'import tomllib,pathlib;
@@ -61,6 +65,9 @@ jobs:
   github-release:
     name: github release
     needs: build
+    # Only a tag releases. A manual run stops after build, so the workflow can
+    # be exercised without putting anything in front of anyone.
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
       contents: write # the only write permission in this repository, and only here
@@ -90,15 +97,19 @@ jobs:
   pypi:
     name: pypi
     needs: build
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    # Requires a `pypi` environment on the repository. Add a required reviewer
-    # to it and publishing needs a human to approve, which is the point: a
-    # pushed tag should not be able to put a release on PyPI on its own.
+    # The `pypi` environment carries a required reviewer, so a pushed tag
+    # cannot publish on its own. That matters more here than it would with
+    # trusted publishing: PYPI_API_TOKEN is account-scoped, because a
+    # project-scoped token cannot be minted for a project that does not exist
+    # yet. Narrow it to the project, or move to trusted publishing, once arcet
+    # is on the index.
     environment:
       name: pypi
       url: https://pypi.org/p/arcet
     permissions:
-      id-token: write # trusted publishing; no API token is stored anywhere
+      contents: read
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -110,3 +121,5 @@ jobs:
         run: rm -f dist/SHA256SUMS
 
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
