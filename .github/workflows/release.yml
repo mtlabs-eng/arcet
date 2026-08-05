@@ -99,17 +99,23 @@ jobs:
     needs: build
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    # The `pypi` environment carries a required reviewer, so a pushed tag
-    # cannot publish on its own. That matters more here than it would with
-    # trusted publishing: PYPI_API_TOKEN is account-scoped, because a
-    # project-scoped token cannot be minted for a project that does not exist
-    # yet. Narrow it to the project, or move to trusted publishing, once arcet
-    # is on the index.
+    # Trusted publishing: GitHub mints a short-lived OIDC token for this
+    # repository, this workflow and this environment, and PyPI accepts it
+    # because that combination is registered as a publisher. There is no API
+    # token to store, to leak, or to remember to rotate.
+    #
+    # 0.1.0a2 went out with an account-scoped token, because PyPI cannot mint a
+    # project-scoped one for a project that does not exist yet. That token was
+    # the widest-reaching credential in the repository, in a tool whose whole
+    # argument is that it holds no credentials and writes nothing.
+    #
+    # The `pypi` environment still carries a required reviewer, so a pushed tag
+    # cannot publish on its own.
     environment:
       name: pypi
       url: https://pypi.org/p/arcet
     permissions:
-      contents: read
+      id-token: write
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -120,6 +126,6 @@ jobs:
       - name: keep only distributions
         run: rm -f dist/SHA256SUMS
 
+      # No `password:`. The action detects the OIDC token from id-token: write
+      # and exchanges it with PyPI itself.
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
