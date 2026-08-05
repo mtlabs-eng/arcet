@@ -21,8 +21,9 @@ The table output is *not* a contract. It is for reading, and it will change.
 Parse the JSON.
 
 `a` suffixes mean alpha: released, but with parts that have not been proven
-against a real tenant. `pip` and `uv` will not install an alpha unless asked,
-which is the intended friction. See
+against a real tenant. The suffix is a signal, not a gate — `pip` and `uv`
+skip pre-releases only when a stable version exists to fall back to, and there
+is none yet, so `pip install arcet` installs the alpha without comment. See
 [How much of this has been proven](README.md#how-much-of-this-has-been-proven).
 
 ## [Unreleased]

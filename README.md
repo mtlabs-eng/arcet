@@ -146,37 +146,30 @@ comes from running arcet for real, which is what the table above reports.
 
 ## Install
 
-> **Not on PyPI yet.** `arcet` is reserved but unpublished, so `pipx install
-> arcet` will not work until the first release. Install from source for now.
+```console
+uvx arcet --help          # run without installing
+pipx install arcet        # or install it
+```
+
+Requires Python 3.11 or newer.
+
+> **Every release so far is an alpha.** The version carries an `a` suffix
+> because parts of the tool have never run against a real tenant — see
+> [how much of this has been proven](#how-much-of-this-has-been-proven).
+>
+> Note that the suffix **signals** that; it does not **stop** anything.
+> `pip` and `uv` skip pre-releases only when a stable version exists to fall
+> back to. There is none yet, so a plain `pip install arcet` installs the
+> alpha without comment. Read the limits above rather than relying on your
+> package manager to enforce them.
+
+From source, for development or to build the wheel yourself:
 
 ```console
 git clone https://github.com/mtlabs-eng/arcet && cd arcet
 uv sync
 uv run arcet --help
 ```
-
-Or build and install the wheel anywhere:
-
-```console
-uv build
-pipx install dist/arcet-*.whl
-```
-
-Requires Python 3.11 or newer. `uv` is not required to run arcet, only to
-develop it — the wheel installs with `pip` or `pipx` like anything else.
-
-Once published, this becomes:
-
-```console
-uvx arcet@latest --help   # run without installing
-pipx install arcet --pip-args=--pre
-```
-
-The `--pre` is not an oversight. Releases carry an `a` suffix while parts of
-the tool remain unproven against a real tenant, and `pip` and `uv` will not
-install an alpha unless asked. That friction is deliberate: it means nobody
-ends up depending on this by accident before reading
-[what has actually been proven](#how-much-of-this-has-been-proven).
 
 ---
 
