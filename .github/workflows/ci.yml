@@ -16,8 +16,8 @@ concurrency:
 
 jobs:
   test:
-    name: tests (${{ matrix.python }})
-    runs-on: ubuntu-latest
+    name: tests (${{ matrix.os }}, ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: read
     strategy:
@@ -25,7 +25,17 @@ jobs:
       matrix:
         # The floor comes first and is the one that matters: it fails on
         # syntax newer than the oldest interpreter we claim to support.
+        os: [ubuntu-latest]
         python: ["3.11", "3.12", "3.13"]
+        include:
+          # The output is full of box drawing, arrows and ⚠. A Windows console
+          # that is not UTF-8 is where that breaks, and claiming the tool runs
+          # somewhere nobody has run it is the kind of unverified promise this
+          # project keeps catching itself making.
+          - os: macos-latest
+            python: "3.13"
+          - os: windows-latest
+            python: "3.13"
     steps:
       # Actions are pinned by full SHA, with the tag alongside. Resolve new
       # ones with ./scripts/pin.sh owner/repo tag.
