@@ -151,7 +151,14 @@ uvx arcet --help          # run without installing
 pipx install arcet        # or install it
 ```
 
-Requires Python 3.11 or newer.
+Requires Python 3.11 or newer. Linux, macOS and Windows: the wheel is pure
+Python and CI runs the suite on all three.
+
+> One caveat on Windows. The tests prove the logic runs; they render into a
+> buffer, not into a console, so they say nothing about how the box drawing,
+> arrows and `⚠` come out in a terminal that is not UTF-8. Windows Terminal is,
+> and should be fine. If an older console mangles the output, that is a bug
+> worth reporting — and `--format json` is unaffected either way.
 
 > **Every release so far is an alpha.** The version carries an `a` suffix
 > because parts of the tool have never run against a real tenant — see

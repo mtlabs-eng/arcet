@@ -15,6 +15,7 @@ keywords = ["azure", "rbac", "permissions", "iam", "pim", "entra"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
+    "Operating System :: OS Independent",
     "Intended Audience :: System Administrators",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
