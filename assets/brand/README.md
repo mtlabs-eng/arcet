@@ -20,6 +20,31 @@ the path.
 | `favicon.ico` | 16, 32 and 48 px. The 16 px entry uses the reduced mark. |
 | `arcet-mark-32.png`, `-64.png`, `-128.png` | Raster mark, transparent background. |
 | `social-preview.png` | 1280×640, for the repository's social preview card. |
+| `launch-card.png` | 1200×1200, square, for social posts. |
+| `launch-card.svg` | The same card with the terminal text as editable `<text>`. |
+
+The terminal panel in `launch-card` is **not typed by hand**. It is captured
+verbatim from `resolve()` and `render_table()` running against a fixture-backed
+source, the same way the tests drive them, with fictitious identities and
+subscription ids throughout. If the renderer changes, regenerating the card
+changes it — which is the point. Composing it surfaced a real wrapping defect
+in the warning headline at narrow widths, now fixed and covered by a test.
+
+**One thing on the card is not literal output.** The subscription scope is
+shown abbreviated — `/subscriptions/00000000…44444444` — where arcet prints it
+in full, every time. At a size that stays legible in a phone feed a
+51-character id crowds out the chain, which is the thing the card exists to
+show. It is written down here because a project that spends this much effort
+separating "tested" from "verified" should not quietly edit its own screenshot.
+
+The SVG is the source and the PNG is rasterised from it: the generator reads
+the SVG back and draws its elements, so the two cannot drift apart. Rendering
+through cairosvg was tried first and abandoned — on macOS it cannot resolve
+JetBrains Mono and silently substitutes a proportional face, which moves every
+column.
+
+The SVG keeps the text as `<text>` elements so it can be edited, and names
+JetBrains Mono with a monospace fallback; the PNG is the one to post.
 
 `social-preview.png` has to be uploaded by hand — GitHub exposes no API for
 it. Settings → General → Social preview. It is versioned here so the card can

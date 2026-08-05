@@ -231,6 +231,34 @@ class TestTableEdges:
         lines = output_of(console).splitlines()
         assert [line for line in lines if line != line.rstrip()] == []
 
+    def test_the_warning_headline_wraps_with_an_indent(self) -> None:
+        """Regression: on a narrow terminal it folded back to column zero.
+
+        Rich wrapped the headline itself, so "interpreted" ended up alone
+        against the left margin, reading like a stray line rather than part of
+        the warning. The bullets had already been fixed; this had not.
+        """
+        narrow = Console(file=StringIO(), width=64, force_terminal=False, no_color=True)
+        result = ResolutionResult(
+            identity=USER,
+            subscription=SUBSCRIPTION,
+            warnings=(
+                UnsupportedConstruct(
+                    kind=UnsupportedConstructKind.DENY_ASSIGNMENT,
+                    message="1 deny assignment",
+                ),
+            ),
+        )
+        render_table(result, narrow)
+        assert isinstance(narrow.file, StringIO)
+        lines = narrow.file.getvalue().splitlines()
+        headline = [
+            line for line in lines if "incomplete" in line or "interpreted" in line
+        ]
+        assert len(headline) > 1, "expected the headline to wrap at this width"
+        for continuation in headline[1:]:
+            assert continuation.startswith("   ")
+
     def test_long_warnings_wrap_under_the_bullet(self, console: Console) -> None:
         """A warning that wraps to column zero is one people learn to skip."""
         result = ResolutionResult(

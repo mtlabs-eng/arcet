@@ -212,19 +212,24 @@ def _print_warnings(result: ResolutionResult, console: Console) -> None:
     """Announce, before anything else, that the answer may be partial."""
     count = len(result.warnings)
     noun = "construction" if count == 1 else "constructions"
-    console.print(
-        Text.assemble(
-            ("⚠  ", "bold yellow"),
-            (
-                f"result may be incomplete — {count} {noun} detected "
-                f"and not interpreted",
-                "bold yellow",
-            ),
-        )
-    )
+
     # Wrapped by hand rather than with rich.Padding, which pads every line out
     # to the full width and leaves trailing spaces in redirected output.
     body_width = max(_MIN_WRAP_WIDTH, console.width - len(_WARNING_CONTINUATION))
+
+    # The headline wraps like the bullets do. Left to Rich it folded back to
+    # column zero on a narrow terminal, putting "interpreted" alone against the
+    # left margin — the same defect already fixed for the bullets, missed here.
+    headline = f"result may be incomplete — {count} {noun} detected and not interpreted"
+    for index, line in enumerate(
+        textwrap.wrap(
+            headline,
+            width=body_width,
+            initial_indent="⚠  ",
+            subsequent_indent="   ",
+        )
+    ):
+        console.print(Text(line, style="bold yellow"), soft_wrap=index > 0)
     for warning in result.warnings:
         for line in textwrap.wrap(
             warning.message,
