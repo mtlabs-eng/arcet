@@ -28,7 +28,19 @@ is none yet, so `pip install arcet` installs the alpha without comment. See
 
 ## [Unreleased]
 
-Nothing yet.
+### Verified
+
+- **`insufficient_read_access` now exercised against real Azure.** Pointing
+  arcet at a subscription the credentials cannot see made every read fail;
+  every failure produced a warning, and the result came back with zero
+  permissions and `complete: false` rather than a quiet empty list.
+
+  This covers the error path. The case underneath it — Azure returning fewer
+  rows with no error — stays undetectable by construction, which is why the
+  documentation says the list may be short rather than claiming it is whole.
+
+- The test suite runs on macOS and Windows as well as Linux. Windows had never
+  been executed by anyone before this.
 
 ## [0.1.0a2] — 2026-08-04
 

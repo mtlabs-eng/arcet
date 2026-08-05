@@ -116,13 +116,24 @@ Where it stands today:
 | Built-in and custom role definitions | ✅ |
 | Wildcard expansion and `NotActions` | ✅ |
 | Deny assignment detection | ✅ |
+| `insufficient_read_access` warnings | ✅ — see the caveat below |
 | **PIM eligibility and activation** | ❌ **never** — the only tenant tested has no Entra ID P2 |
-| **`insufficient_read_access` warnings** | ❌ **never** — the only identity tested could read everything |
 
-The two unproven paths are covered by unit tests and fixtures, and the code is
-written to the documented API shapes. That is not the same as knowing it works.
-If you run arcet in a tenant with PIM, or with a genuinely restricted identity,
-a report either way would be useful.
+`insufficient_read_access` was exercised by pointing arcet at a subscription
+the credentials cannot see. Every read failed, every failure produced a
+warning, and the result came back with zero permissions and `complete: false`
+rather than a quiet empty list.
+
+What that proves is that arcet reports an error instead of swallowing it. What
+nothing can prove is the case underneath it: Azure returning **fewer rows with
+no error at all**. That is undetectable by construction — by arcet and by
+anything else — which is why the answer here is "the list may be short", not
+"the list is complete".
+
+PIM remains unproven. It is covered by unit tests against the documented API
+shapes, which is not the same as knowing the API returns them. If you run arcet
+in a tenant with Entra ID P2, a report either way would close this —
+[issue #1](https://github.com/mtlabs-eng/arcet/issues/1).
 
 Coverage sits at **95%** across the modules where the judgement lives — the
 model, the group walk, wildcard expansion, the resolver and the renderers.
